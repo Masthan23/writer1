@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Dashverse</title>
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #2c3e50; }
+        .navbar { background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); padding: 1rem 2.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(102,126,234,0.1); box-shadow: 0 2px 20px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .navbar-brand { display: flex; align-items: center; gap: 1rem; }
+        .navbar-brand img { width: 42px; height: 42px; border-radius: 8px; }
+        .navbar-title { font-size: 1.375rem; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .navbar-actions { display: flex; align-items: center; gap: 1.5rem; }
+        .user-badge { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); border-radius: 50px; border: 1px solid rgba(102,126,234,0.2); }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem; }
+        .user-name { font-weight: 500; color: #495057; }
+        .admin-badge { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .sync-status { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 1rem; border-radius: 50px; font-size: 0.8125rem; font-weight: 500; }
+        .sync-status.connected { background: rgba(40,167,69,0.1); color: #155724; border: 1px solid rgba(40,167,69,0.2); }
+        .sync-status.syncing { background: rgba(255,193,7,0.1); color: #856404; border: 1px solid rgba(255,193,7,0.2); }
+        .sync-status.error { background: rgba(220,53,69,0.1); color: #721c24; border: 1px solid rgba(220,53,69,0.2); }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .sync-dot.connected { background: #28a745; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #ffc107; animation: pulse 0.5s infinite; }
+        .sync-dot.error { background: #dc3545; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        .btn-logout { padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9375rem; transition: all 0.3s; }
+        .btn-logout:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,87,108,0.4); }
+        .main-container { max-width: 1800px; margin: 0 auto; padding: 2rem 2.5rem; }
+        .page-header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .page-header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+        .page-header p { color: #6c757d; font-size: 1.0625rem; }
+        .page-header-actions { display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; align-items: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: rgba(255,255,255,0.95); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .stat-label { color: #6c757d; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-sub { font-size: 0.8125rem; color: #6c757d; margin-top: 0.25rem; }
+        .stat-card.clickable { cursor: pointer; position: relative; border: 2px solid transparent; }
+        .stat-card.clickable:hover { border-color: rgba(102,126,234,0.3); }
+        .stat-card.clickable::after { content: '→'; position: absolute; top: 1.5rem; right: 1.5rem; font-size: 1.25rem; color: #667eea; opacity: 0; transition: all 0.3s; }
+        .stat-card.clickable:hover::after { opacity: 1; }
+        .stat-card-click-hint { font-size: 0.6875rem; color: #667eea; margin-top: 0.375rem; opacity: 0; transition: opacity 0.3s; font-weight: 500; }
+        .stat-card.clickable:hover .stat-card-click-hint { opacity: 1; }
+        .card { background: rgba(255,255,255,0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1); overflow: hidden; }
+        .card-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%); border-bottom: 1px solid rgba(102,126,234,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .card-title { font-size: 1.25rem; font-weight: 600; color: #2c3e50; }
+        .card-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .search-input { padding: 0.5rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 8px; font-size: 0.9375rem; width: 250px; transition: all 0.3s; }
+        .search-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .btn { padding: 0.5rem 1.25rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9375rem; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #2c3e50; }
+        .btn-info { background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+        .table-container { overflow-x: auto; padding: 1.5rem; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; min-width: 2800px; }
+        .data-table thead { background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%); position: sticky; top: 0; z-index: 2; }
+        .data-table th { padding: 1rem 0.75rem; text-align: left; font-weight: 600; color: #495057; border-bottom: 2px solid rgba(102,126,234,0.2); white-space: nowrap; font-size: 0.8125rem; background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%); }
+        .data-table td { padding: 1rem 0.75rem; border-bottom: 1px solid rgba(102,126,234,0.1); color: #2c3e50; vertical-align: middle; }
+        .data-table tbody tr { transition: background 0.15s; }
+        .data-table tbody tr:hover { background: rgba(102,126,234,0.03); }
+        .locked-col { background: rgba(102,126,234,0.02); }
+        .locked-header::after { content: '🔒'; font-size: 0.625rem; margin-left: 4px; opacity: 0.4; }
+        .show-code-badge { font-family: 'Courier New', monospace; font-weight: 600; color: #667eea; background: rgba(102,126,234,0.1); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8125rem; }
+        .writer-id-badge { font-family: 'Courier New', monospace; font-weight: 600; color: #28a745; background: rgba(40,167,69,0.1); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8125rem; }
+        .email-badge { font-size: 0.8125rem; color: #764ba2; background: rgba(118,75,162,0.1); padding: 0.25rem 0.5rem; border-radius: 4px; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .status-assets-shared { background: rgba(13,202,240,0.15); color: #055160; }
+        .status-localization-notes-received { background: rgba(111,66,193,0.15); color: #3d1a7a; }
+        .status-localization-discussion-wip { background: rgba(255,193,7,0.15); color: #856404; }
+        .status-localization-completed { background: rgba(40,167,69,0.15); color: #155724; }
+        .status-scripting-wip { background: rgba(255,152,0,0.15); color: #7a4100; }
+        .status-draft1-partial { background: rgba(102,126,234,0.15); color: #3d4eac; }
+        .status-draft1-all { background: rgba(23,162,184,0.15); color: #0c5460; }
+        .status-completed { background: rgba(40,167,69,0.2); color: #155724; }
+        .status-paused { background: rgba(220,53,69,0.15); color: #721c24; }
+        .status-default { background: rgba(108,117,125,0.15); color: #495057; }
+        .license-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .license-available { background: rgba(40,167,69,0.15); color: #155724; }
+        .license-not-available { background: rgba(220,53,69,0.15); color: #721c24; }
+        .payment-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .payment-pending { background: rgba(220,53,69,0.15); color: #721c24; }
+        .payment-completed { background: rgba(40,167,69,0.15); color: #155724; }
+        .action-buttons { display: flex; gap: 0.5rem; }
+        .btn-icon { padding: 0.375rem 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; background: none; }
+        .btn-edit { color: #667eea; background: rgba(102,126,234,0.1); }
+        .btn-edit:hover { background: rgba(102,126,234,0.2); }
+        .btn-delete { color: #dc3545; background: rgba(220,53,69,0.1); }
+        .btn-delete:hover { background: rgba(220,53,69,0.2); }
+        .link-cell { display: inline-flex; align-items: center; gap: 0.5rem; }
+        .link-cell a { color: #667eea; text-decoration: none; font-weight: 500; font-size: 0.8125rem; }
+        .link-cell a:hover { color: #764ba2; text-decoration: underline; }
+        .btn-link-edit { padding: 0.25rem 0.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; background: rgba(102,126,234,0.1); color: #667eea; transition: all 0.2s; }
+        .btn-link-edit:hover { background: rgba(102,126,234,0.2); }
+        .editable-cell { display: inline-flex; align-items: center; gap: 0.375rem; }
+        .editable-cell .btn-inline-edit { padding: 0.125rem 0.375rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.6875rem; background: rgba(102,126,234,0.08); color: #667eea; transition: all 0.2s; opacity: 0.5; }
+        .editable-cell:hover .btn-inline-edit { opacity: 1; }
+        .editable-cell .btn-inline-edit:hover { background: rgba(102,126,234,0.2); }
+        .show-count { display: inline-block; background: rgba(102,126,234,0.1); color: #667eea; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.875rem; }
+        .skeleton-row td { padding: 1rem 0.75rem; }
+        .skeleton-cell { height: 20px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+        @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #667eea, #764ba2); z-index: 9999; transition: width 0.3s ease; width: 0; }
+        .progress-bar.done { opacity: 0; transition: opacity 0.5s ease 0.2s; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; gap: 1rem; }
+        .loading-overlay.show { display: flex; }
+        .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(102,126,234,0.2); border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .loading-text { color: #667eea; font-weight: 600; font-size: 1.125rem; }
+        .quick-edit-modal,.modal,.chat-modal,.confirm-modal,.writers-modal,.active-writers-modal,.writer-history-modal,.total-shows-modal,.completed-writers-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
+        .quick-edit-modal.show,.chat-modal.show,.confirm-modal.show,.writers-modal.show,.active-writers-modal.show,.writer-history-modal.show,.total-shows-modal.show,.completed-writers-modal.show { display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+        .modal.show { display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+        .quick-edit-content { background: white; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .quick-edit-header,.modal-header,.chat-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%); border-bottom: 1px solid rgba(102,126,234,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .quick-edit-title { font-size: 1.125rem; font-weight: 600; color: #2c3e50; }
+        .quick-edit-body { padding: 2rem; }
+        .quick-edit-label { display: block; margin-bottom: 0.75rem; color: #495057; font-weight: 500; }
+        .quick-edit-input,.quick-edit-select { width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 8px; font-size: 0.9375rem; font-family: inherit; }
+        .quick-edit-input:focus,.quick-edit-select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .quick-edit-footer { padding: 1.5rem 2rem; border-top: 1px solid rgba(102,126,234,0.1); display: flex; justify-content: flex-end; gap: 1rem; }
+        .btn-quick-cancel { padding: 0.625rem 1.5rem; background: rgba(108,117,125,0.1); color: #495057; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
+        .btn-quick-save { padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
+        .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 1200px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin: auto; }
+        .modal-content.add-mode { max-width: 700px; }
+        .modal-title,.chat-title { font-size: 1.375rem; font-weight: 600; color: #2c3e50; }
+        .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6c757d; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+        .btn-close:hover { color: #dc3545; background: rgba(220,53,69,0.1); }
+        .modal-body { padding: 2rem; max-height: calc(90vh - 200px); overflow-y: auto; }
+        .form-section { margin-bottom: 2rem; }
+        .form-section-title { font-size: 1.125rem; font-weight: 600; color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(102,126,234,0.2); }
+        .form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+        .form-grid-2col { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; }
+        .form-field { margin-bottom: 0.5rem; }
+        .form-field.span-2 { grid-column: span 2; }
+        .form-field.span-full { grid-column: 1/-1; }
+        .form-label { display: block; margin-bottom: 0.5rem; color: #495057; font-weight: 500; font-size: 0.9375rem; }
+        .asterisk { color: #f5576c; margin-left: 0.25rem; }
+        .form-input,.form-select { width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 8px; font-size: 0.9375rem; font-family: inherit; transition: all 0.3s; }
+        .form-input:focus,.form-select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .form-input:disabled { background-color: rgba(102,126,234,0.05); cursor: not-allowed; }
+        .form-hint { font-size: 0.75rem; color: #6c757d; margin-top: 0.25rem; }
+        .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid rgba(102,126,234,0.1); display: flex; justify-content: flex-end; gap: 1rem; }
+        .btn-cancel { padding: 0.75rem 2rem; background: rgba(108,117,125,0.1); color: #495057; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
+        .btn-save { padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
+        .empty-state { text-align: center; padding: 4rem 2rem; color: #6c757d; }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: rgba(40,167,69,0.95); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; animation: slideIn 0.3s ease; z-index: 1100; max-width: 400px; }
+        .toast.show { display: block; }
+        .toast.error { background: rgba(220,53,69,0.95); }
+        .toast.warning { background: rgba(255,193,7,0.95); color: #2c3e50; }
+        @keyframes slideIn { from { transform:translateX(400px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+        .writer-update-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #28a745; margin-left: 4px; }
+        .chat-content { background: white; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 85vh; }
+        .chat-header { border-radius: 16px 16px 0 0; }
+        .chat-header-info { display: flex; flex-direction: column; }
+        .chat-subtitle { font-size: 0.8125rem; color: #6c757d; font-weight: 400; margin-top: 2px; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 1.5rem; background: #f8f9fa; min-height: 300px; max-height: 50vh; }
+        .chat-empty { text-align: center; padding: 3rem 1rem; color: #6c757d; }
+        .chat-messages { display: flex; flex-direction: column; gap: 1rem; }
+        .chat-message { max-width: 85%; display: flex; flex-direction: column; }
+        .chat-message.sent { align-self: flex-end; align-items: flex-end; }
+        .chat-message.received { align-self: flex-start; align-items: flex-start; }
+        .chat-bubble { padding: 0.75rem 1rem; border-radius: 16px; font-size: 0.9375rem; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; }
+        .chat-message.sent .chat-bubble { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px; }
+        .chat-message.received .chat-bubble { background: white; color: #2c3e50; border: 1px solid rgba(102,126,234,0.15); border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .chat-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; padding: 0 0.25rem; }
+        .chat-sender { font-size: 0.6875rem; font-weight: 600; }
+        .chat-message.sent .chat-sender { color: rgba(102,126,234,0.7); }
+        .chat-message.received .chat-sender { color: #28a745; }
+        .chat-time { font-size: 0.6875rem; color: #adb5bd; }
+        .chat-role-badge { font-size: 0.5625rem; padding: 0.125rem 0.375rem; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chat-role-admin { background: rgba(245,87,108,0.15); color: #f5576c; }
+        .chat-role-writer { background: rgba(40,167,69,0.15); color: #28a745; }
+        .chat-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(102,126,234,0.1); background: white; border-radius: 0 0 16px 16px; }
+        .chat-input-row { display: flex; gap: 0.75rem; align-items: flex-end; }
+        .chat-input { flex: 1; padding: 0.75rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 12px; font-size: 0.9375rem; font-family: inherit; resize: none; min-height: 44px; max-height: 120px; transition: border-color 0.3s; }
+        .chat-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .chat-send-btn { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; transition: all 0.2s; flex-shrink: 0; }
+        .chat-send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .chat-date-divider { text-align: center; margin: 0.75rem 0; }
+        .chat-date-divider span { background: #e9ecef; color: #6c757d; font-size: 0.6875rem; padding: 0.25rem 0.75rem; border-radius: 10px; font-weight: 500; }
+        .remarks-cell { max-width: 160px; }
+        .remarks-count { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .remarks-count.has-messages { background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%); color: #667eea; }
+        .remarks-count.has-messages:hover { background: linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(118,75,162,0.25) 100%); }
+        .remarks-count.no-messages { background: rgba(108,117,125,0.1); color: #6c757d; }
+        .remarks-count.no-messages:hover { background: rgba(108,117,125,0.2); }
+        .remarks-last { font-size: 0.6875rem; color: #6c757d; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; margin-top: 2px; }
+        .confirm-content { background: white; border-radius: 16px; width: 90%; max-width: 700px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .confirm-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(255,193,7,0.1) 0%, rgba(255,152,0,0.1) 100%); border-bottom: 2px solid rgba(255,193,7,0.3); display: flex; align-items: center; gap: 1rem; }
+        .confirm-header-icon { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .confirm-header-text h3 { font-size: 1.25rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.25rem; }
+        .confirm-header-text p { font-size: 0.875rem; color: #6c757d; }
+        .confirm-body { padding: 1.5rem 2rem; max-height: 60vh; overflow-y: auto; }
+        .confirm-show-info { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%); border-radius: 10px; margin-bottom: 1.25rem; border: 1px solid rgba(102,126,234,0.15); }
+        .confirm-show-code { font-family: 'Courier New', monospace; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.15); padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; }
+        .confirm-show-name { font-weight: 600; color: #2c3e50; font-size: 1rem; }
+        .confirm-action-badge { margin-left: auto; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .confirm-action-badge.new { background: rgba(40,167,69,0.15); color: #155724; }
+        .confirm-action-badge.update { background: rgba(255,193,7,0.15); color: #856404; }
+        .confirm-section-title { font-size: 0.8125rem; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(102,126,234,0.1); }
+        .confirm-changes-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+        .confirm-change-row { display: grid; grid-template-columns: 160px 1fr; gap: 0.75rem; padding: 0.625rem 0.75rem; border-radius: 8px; font-size: 0.875rem; align-items: start; }
+        .confirm-change-row:nth-child(odd) { background: rgba(102,126,234,0.03); }
+        .confirm-change-field { font-weight: 600; color: #495057; font-size: 0.8125rem; }
+        .confirm-change-value { color: #2c3e50; word-break: break-word; }
+        .confirm-change-diff { display: flex; flex-direction: column; gap: 0.25rem; }
+        .confirm-old-value { color: #dc3545; text-decoration: line-through; font-size: 0.8125rem; opacity: 0.7; }
+        .confirm-new-value { color: #28a745; font-weight: 500; }
+        .confirm-no-changes { text-align: center; padding: 2rem 1rem; color: #6c757d; }
+        .confirm-no-changes-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4; }
+        .confirm-footer { padding: 1.25rem 2rem; border-top: 2px solid rgba(255,193,7,0.2); display: flex; justify-content: flex-end; gap: 1rem; background: rgba(255,253,245,0.5); }
+        .btn-confirm-cancel { padding: 0.75rem 2rem; background: rgba(108,117,125,0.1); color: #495057; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9375rem; }
+        .btn-confirm-save { padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9375rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-confirm-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .btn-confirm-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+        .confirm-warning-banner { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.875rem; color: #856404; }
+        .confirm-warning-banner .warning-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .confirm-quick-edit-preview { padding: 1rem; background: rgba(102,126,234,0.04); border-radius: 10px; border: 1px solid rgba(102,126,234,0.1); }
+        .confirm-quick-field { font-weight: 600; color: #495057; margin-bottom: 0.5rem; font-size: 0.9375rem; }
+        .confirm-quick-value { padding: 0.75rem 1rem; background: white; border-radius: 8px; font-size: 0.875rem; color: #2c3e50; word-break: break-all; border: 1px solid rgba(102,126,234,0.1); }
+        .add-mode .edit-only-section { display: none !important; }
+        .writers-modal-content { background: white; border-radius: 16px; width: 95%; max-width: 1000px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; }
+        .writers-modal-header { padding: 1.75rem 2rem; background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%); border-bottom: 1px solid rgba(102,126,234,0.15); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .writers-modal-header-left { display: flex; align-items: center; gap: 1rem; }
+        .writers-modal-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .writers-modal-title { font-size: 1.375rem; font-weight: 700; color: #2c3e50; }
+        .writers-modal-subtitle { font-size: 0.8125rem; color: #6c757d; margin-top: 2px; }
+        .writers-modal-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8125rem; font-weight: 600; }
+        .writers-modal-body { flex: 1; overflow-y: auto; padding: 0; }
+        .writers-modal-search { padding: 1rem 2rem; border-bottom: 1px solid rgba(102,126,234,0.1); background: rgba(248,249,250,0.5); flex-shrink: 0; }
+        .writers-modal-search input { width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 10px; font-size: 0.9375rem; font-family: inherit; }
+        .writers-modal-search input:focus { outline: none; border-color: #667eea; }
+        .writers-modal-table-wrap { overflow-x: auto; }
+        .writers-modal-empty { text-align: center; padding: 3rem 2rem; color: #6c757d; }
+        .show-list-card { background: white; border: 1px solid rgba(102,126,234,0.15); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .show-list-card:hover { border-color: rgba(102,126,234,0.35); box-shadow: 0 4px 16px rgba(102,126,234,0.12); transform: translateY(-1px); }
+        .show-list-card-code { font-family: 'Courier New', monospace; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.1); padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.8125rem; white-space: nowrap; flex-shrink: 0; }
+        .show-list-card-names { flex: 1; min-width: 0; }
+        .show-list-card-chinese { font-weight: 700; color: #2c3e50; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .show-list-card-working { font-size: 0.8125rem; color: #6c757d; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .show-list-card-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+        .show-list-card-type { font-size: 0.6875rem; color: #6c757d; background: rgba(108,117,125,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; }
+        .completed-writer-card { background: white; border: 1px solid rgba(40,167,69,0.2); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s, transform 0.2s; }
+        .completed-writer-card:hover { box-shadow: 0 6px 24px rgba(40,167,69,0.15); transform: translateY(-2px); }
+        .completed-writer-card-header { padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(40,167,69,0.06) 0%, rgba(32,201,151,0.06) 100%); display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(40,167,69,0.1); }
+        .completed-writer-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.0625rem; flex-shrink: 0; }
+        .completed-writer-name { font-size: 1rem; font-weight: 700; color: #2c3e50; }
+        .completed-writer-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 3px; flex-wrap: wrap; }
+        .completed-writer-id-badge { font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 600; color: #28a745; background: rgba(40,167,69,0.1); padding: 0.125rem 0.5rem; border-radius: 4px; }
+        .completed-writer-shows-count { margin-left: auto; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
+        .completed-writer-shows { padding: 0.875rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .completed-writer-show-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: rgba(40,167,69,0.04); border-radius: 8px; border: 1px solid rgba(40,167,69,0.1); }
+        .completed-writer-show-code { font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+        .completed-writer-show-name { font-size: 0.875rem; font-weight: 600; color: #2c3e50; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .completed-writer-show-badge { background: rgba(40,167,69,0.15); color: #155724; padding: 0.2rem 0.625rem; border-radius: 10px; font-size: 0.6875rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .writer-selector-wrapper { position: relative; }
+        .writer-dropdown-trigger { width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(102,126,234,0.2); border-radius: 8px; font-size: 0.9375rem; font-family: inherit; cursor: pointer; background: white; display: flex; justify-content: space-between; align-items: center; min-height: 48px; }
+        .writer-dropdown-trigger:hover { border-color: rgba(102,126,234,0.4); }
+        .writer-dropdown-trigger.active { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); border-radius: 8px 8px 0 0; }
+        .writer-dropdown-trigger .selected-writer { display: flex; flex-direction: column; gap: 2px; }
+        .writer-dropdown-trigger .selected-writer-name { font-weight: 600; color: #2c3e50; font-size: 0.9375rem; }
+        .writer-dropdown-trigger .selected-writer-email { font-size: 0.75rem; color: #6c757d; }
+        .writer-dropdown-trigger .placeholder-text { color: #adb5bd; }
+        .writer-dropdown-trigger .dropdown-arrow { font-size: 0.75rem; color: #6c757d; transition: transform 0.2s; }
+        .writer-dropdown-trigger.active .dropdown-arrow { transform: rotate(180deg); }
+        .writer-dropdown-panel { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; display: none; max-height: 280px; overflow: hidden; flex-direction: column; }
+        .writer-dropdown-panel.show { display: flex; }
+        .writer-dropdown-search { padding: 0.75rem 1rem; border: none; border-bottom: 1px solid rgba(102,126,234,0.15); font-size: 0.875rem; font-family: inherit; outline: none; }
+        .writer-dropdown-list { overflow-y: auto; max-height: 220px; }
+        .writer-dropdown-item { padding: 0.75rem 1rem; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .writer-dropdown-item:last-child { border-bottom: none; }
+        .writer-dropdown-item:hover { background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%); }
+        .writer-dropdown-item.selected { background: linear-gradient(135deg, rgba(102,126,234,0.12) 0%, rgba(118,75,162,0.12) 100%); }
+        .writer-dropdown-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.8rem; flex-shrink: 0; }
+        .writer-dropdown-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .writer-dropdown-name { font-weight: 600; color: #2c3e50; font-size: 0.875rem; }
+        .writer-dropdown-email { font-size: 0.75rem; color: #6c757d; }
+        .writer-dropdown-phone { font-size: 0.6875rem; color: #adb5bd; }
+        .writer-dropdown-empty { padding: 2rem 1rem; text-align: center; color: #adb5bd; font-size: 0.875rem; }
+        .writer-dropdown-clear { padding: 0.5rem 1rem; text-align: center; border-top: 1px solid rgba(102,126,234,0.15); cursor: pointer; color: #dc3545; font-size: 0.8125rem; font-weight: 500; }
+        .writer-dropdown-clear:hover { background: rgba(220,53,69,0.06); }
+        .writer-selected-preview { margin-top: 0.5rem; padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(40,167,69,0.06) 0%, rgba(32,201,151,0.06) 100%); border: 1px solid rgba(40,167,69,0.2); border-radius: 8px; display: none; }
+        .writer-selected-preview.show { display: block; }
+        .writer-selected-preview .preview-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.8125rem; margin-bottom: 0.25rem; }
+        .writer-selected-preview .preview-row:last-child { margin-bottom: 0; }
+        .writer-selected-preview .preview-label { color: #6c757d; font-weight: 500; min-width: 70px; }
+        .writer-selected-preview .preview-value { color: #2c3e50; font-weight: 600; }
+        .quick-edit-writer-dropdown { display: none; }
+        .quick-edit-writer-dropdown.show { display: block; }
+        .writer-autofill-info { margin-top: 0.75rem; padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(40,167,69,0.07) 0%, rgba(32,201,151,0.07) 100%); border: 1px solid rgba(40,167,69,0.25); border-radius: 8px; display: none; }
+        .writer-autofill-info.show { display: block; }
+        .writer-autofill-info-title { font-size: 0.6875rem; font-weight: 700; color: #28a745; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .writer-autofill-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; margin-bottom: 0.25rem; }
+        .writer-autofill-row:last-child { margin-bottom: 0; }
+        .writer-autofill-label { color: #6c757d; font-weight: 500; min-width: 65px; }
+        .writer-autofill-value { color: #2c3e50; font-weight: 600; }
+        .writer-autofill-badge { font-size: 0.6875rem; background: rgba(40,167,69,0.15); color: #155724; padding: 0.125rem 0.375rem; border-radius: 4px; font-weight: 600; margin-left: auto; }
+        .active-writers-modal-content { background: white; border-radius: 20px; width: 96%; max-width: 1100px; box-shadow: 0 24px 64px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 92vh; overflow: hidden; }
+        .active-writers-modal-header { padding: 1.75rem 2rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .active-writers-modal-header-left { display: flex; align-items: center; gap: 1rem; }
+        .active-writers-modal-icon { width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; }
+        .active-writers-modal-title { font-size: 1.5rem; font-weight: 700; color: white; }
+        .active-writers-modal-subtitle { font-size: 0.875rem; color: rgba(255,255,255,0.8); margin-top: 3px; }
+        .active-writers-modal-badge { background: rgba(255,255,255,0.25); color: white; padding: 0.375rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 700; border: 2px solid rgba(255,255,255,0.3); }
+        .active-writers-modal-header .btn-close { color: white; }
+        .active-writers-modal-header .btn-close:hover { background: rgba(255,255,255,0.2); color: white; }
+        .active-writers-modal-toolbar { padding: 1rem 2rem; border-bottom: 1px solid rgba(40,167,69,0.15); background: rgba(40,167,69,0.03); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; flex-shrink: 0; }
+        .active-writers-modal-toolbar input { flex: 1; min-width: 200px; padding: 0.625rem 1rem; border: 2px solid rgba(40,167,69,0.25); border-radius: 10px; font-size: 0.9375rem; font-family: inherit; transition: border-color 0.3s; }
+        .active-writers-modal-toolbar input:focus { outline: none; border-color: #28a745; box-shadow: 0 0 0 3px rgba(40,167,69,0.1); }
+        .active-writers-modal-toolbar-info { font-size: 0.8125rem; color: #6c757d; white-space: nowrap; }
+        .active-writers-modal-body { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+        .active-writer-cards { display: flex; flex-direction: column; gap: 1.25rem; }
+        .active-writer-card { background: white; border: 1px solid rgba(40,167,69,0.15); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s, transform 0.2s; }
+        .active-writer-card:hover { box-shadow: 0 6px 24px rgba(40,167,69,0.15); transform: translateY(-2px); }
+        .active-writer-card-header { padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(40,167,69,0.06) 0%, rgba(32,201,151,0.06) 100%); display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(40,167,69,0.1); }
+        .active-writer-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.125rem; flex-shrink: 0; }
+        .active-writer-info { flex: 1; min-width: 0; }
+        .active-writer-name { font-size: 1.0625rem; font-weight: 700; color: #2c3e50; }
+        .active-writer-meta { display: flex; align-items: center; gap: 0.75rem; margin-top: 3px; flex-wrap: wrap; }
+        .active-writer-id { font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 600; color: #28a745; background: rgba(40,167,69,0.1); padding: 0.125rem 0.5rem; border-radius: 4px; }
+        .active-writer-email-text { font-size: 0.8125rem; color: #764ba2; }
+        .active-writer-phone-text { font-size: 0.8125rem; color: #6c757d; }
+        .active-writer-shows-count { margin-left: auto; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 0.375rem 1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
+        .active-writer-shows { padding: 1rem 1.5rem; }
+        .active-writer-shows-title { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; }
+        .active-writer-shows-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .active-writer-show-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem; background: rgba(248,249,250,0.8); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); transition: background 0.15s; }
+        .active-writer-show-row:hover { background: rgba(40,167,69,0.04); }
+        .active-writer-show-code { font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 700; color: #667eea; background: rgba(102,126,234,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+        .active-writer-show-name { font-size: 0.875rem; font-weight: 600; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .active-writer-show-type { font-size: 0.6875rem; color: #adb5bd; white-space: nowrap; }
+        .active-writer-show-status { white-space: nowrap; }
+        .active-writer-empty { text-align: center; padding: 4rem 2rem; color: #6c757d; }
+        .active-writer-empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.25; }
+        .active-writer-empty h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: #495057; }
+        .writer-change-reason-section { margin-top: 1.25rem; padding: 1.25rem; background: linear-gradient(135deg, rgba(220,53,69,0.05) 0%, rgba(245,87,108,0.05) 100%); border: 2px solid rgba(220,53,69,0.3); border-radius: 10px; }
+        .writer-change-reason-title { font-size: 0.875rem; font-weight: 700; color: #dc3545; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .writer-change-reason-subtitle { font-size: 0.8125rem; color: #6c757d; margin-bottom: 0.875rem; }
+        .writer-change-reason-input { width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(220,53,69,0.3); border-radius: 8px; font-size: 0.9375rem; font-family: inherit; resize: vertical; min-height: 80px; transition: border-color 0.3s; background: white; }
+        .writer-change-reason-input:focus { outline: none; border-color: #dc3545; box-shadow: 0 0 0 3px rgba(220,53,69,0.1); }
+        .writer-change-reason-input.error { border-color: #dc3545; background: rgba(220,53,69,0.04); }
+        .writer-change-reason-error { font-size: 0.8125rem; color: #dc3545; margin-top: 0.375rem; display: none; font-weight: 500; }
+        .writer-change-reason-error.show { display: block; }
+        .writer-change-reason-counter { font-size: 0.75rem; color: #adb5bd; text-align: right; margin-top: 0.25rem; }
+        .writer-change-info-banner { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.875rem 1rem; background: rgba(220,53,69,0.08); border: 1px solid rgba(220,53,69,0.2); border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.875rem; color: #721c24; }
+        .writer-change-info-banner .info-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+        .writer-change-cell { display: flex; flex-direction: column; gap: 4px; }
+        .writer-change-warning-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
+        .writer-change-warning-btn.unseen { background: rgba(220,53,69,0.12); color: #dc3545; border: 1.5px solid rgba(220,53,69,0.35); animation: warnPulse 2s infinite; }
+        .writer-change-warning-btn.unseen:hover { background: rgba(220,53,69,0.22); transform: scale(1.05); }
+        .writer-change-warning-btn.seen { background: rgba(108,117,125,0.08); color: #adb5bd; border: 1px solid rgba(108,117,125,0.2); animation: none; }
+        .writer-change-warning-btn.seen:hover { background: rgba(108,117,125,0.15); color: #6c757d; }
+        @keyframes warnPulse { 0%,100% { box-shadow:0 0 0 0 rgba(220,53,69,0.3); } 50% { box-shadow:0 0 0 4px rgba(220,53,69,0); } }
+        .writer-history-modal-content { background: white; border-radius: 18px; width: 90%; max-width: 580px; box-shadow: 0 24px 64px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 88vh; overflow: hidden; }
+        .writer-history-modal-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(220,53,69,0.08) 0%, rgba(245,87,108,0.08) 100%); border-bottom: 2px solid rgba(220,53,69,0.2); display: flex; align-items: center; gap: 1rem; }
+        .writer-history-modal-icon { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #dc3545 0%, #f5576c 100%); display: flex; align-items: center; justify-content: center; font-size: 1.375rem; flex-shrink: 0; }
+        .writer-history-modal-title-wrap { flex: 1; min-width: 0; }
+        .writer-history-modal-title { font-size: 1.125rem; font-weight: 700; color: #2c3e50; }
+        .writer-history-modal-subtitle { font-size: 0.8125rem; color: #6c757d; margin-top: 2px; }
+        .writer-history-modal-badge { background: linear-gradient(135deg, #dc3545 0%, #f5576c 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+        .writer-history-modal-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.75rem; }
+        .writer-history-modal-footer { padding: 1rem 1.75rem; border-top: 1px solid rgba(220,53,69,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(254,252,252,0.8); }
+        .writer-history-current { padding: 0.875rem 1rem; background: linear-gradient(135deg, rgba(40,167,69,0.06) 0%, rgba(32,201,151,0.06) 100%); border: 1px solid rgba(40,167,69,0.2); border-radius: 10px; margin-bottom: 1.25rem; }
+        .writer-history-current-label { font-size: 0.6875rem; font-weight: 700; color: #28a745; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.375rem; }
+        .writer-history-current-name { font-size: 1rem; font-weight: 700; color: #2c3e50; }
+        .writer-history-current-meta { font-size: 0.8125rem; color: #6c757d; margin-top: 2px; }
+        .writer-history-timeline { display: flex; flex-direction: column; position: relative; }
+        .writer-history-timeline::before { content: ''; position: absolute; left: 16px; top: 24px; bottom: 24px; width: 2px; background: rgba(220,53,69,0.15); }
+        .writer-history-entry { display: flex; gap: 1rem; position: relative; padding-bottom: 1.25rem; }
+        .writer-history-entry:last-child { padding-bottom: 0; }
+        .writer-history-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .writer-history-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; flex-shrink: 0; z-index: 1; border: 2px solid white; }
+        .writer-history-dot.unseen-dot { background: linear-gradient(135deg, #dc3545, #f5576c); color: white; box-shadow: 0 0 0 3px rgba(220,53,69,0.2); }
+        .writer-history-dot.seen-dot { background: rgba(108,117,125,0.12); color: #adb5bd; border: 2px solid rgba(108,117,125,0.2); }
+        .writer-history-card { flex: 1; background: white; border-radius: 10px; overflow: hidden; border: 1px solid rgba(220,53,69,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top: 4px; }
+        .writer-history-card.seen-card { border-color: rgba(108,117,125,0.15); }
+        .writer-history-card-header { padding: 0.625rem 1rem; display: flex; align-items: center; gap: 0.5rem; background: rgba(220,53,69,0.05); border-bottom: 1px solid rgba(220,53,69,0.1); }
+        .writer-history-card.seen-card .writer-history-card-header { background: rgba(108,117,125,0.04); border-bottom-color: rgba(108,117,125,0.08); }
+        .writer-history-date { font-size: 0.75rem; color: #6c757d; }
+        .writer-history-by { font-size: 0.6875rem; color: #adb5bd; margin-left: auto; }
+        .writer-history-unseen-badge { font-size: 0.5625rem; padding: 0.125rem 0.5rem; border-radius: 8px; background: rgba(220,53,69,0.15); color: #dc3545; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .writer-history-seen-badge { font-size: 0.5625rem; padding: 0.125rem 0.5rem; border-radius: 8px; background: rgba(108,117,125,0.1); color: #adb5bd; font-weight: 600; }
+        .writer-history-change-row { padding: 0.625rem 1rem; display: flex; align-items: center; gap: 0.5rem; background: rgba(248,249,250,0.8); border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.8125rem; }
+        .writer-history-from { color: #dc3545; font-weight: 600; }
+        .writer-history-arrow { color: #adb5bd; font-size: 1rem; }
+        .writer-history-to { color: #28a745; font-weight: 600; }
+        .writer-history-reason-wrap { padding: 0.75rem 1rem; }
+        .writer-history-reason-label { font-size: 0.6875rem; font-weight: 700; color: #dc3545; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.375rem; }
+        .writer-history-reason-text { font-size: 0.9rem; color: #2c3e50; line-height: 1.6; white-space: pre-wrap; }
+        .writer-history-empty { text-align: center; padding: 3rem 1rem; color: #6c757d; }
+        .writer-history-empty-icon { font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.25; }
+        .btn-mark-all-seen { padding: 0.5rem 1.25rem; background: rgba(108,117,125,0.1); color: #6c757d; border: 1px solid rgba(108,117,125,0.2); border-radius: 8px; cursor: pointer; font-size: 0.8125rem; font-weight: 600; transition: all 0.2s; }
+        .btn-mark-all-seen:hover { background: rgba(108,117,125,0.2); }
+        .btn-mark-all-seen:disabled { opacity: 0.4; cursor: not-allowed; }
+        #googleSheetLink[data-state="loading"] { opacity: 0.6; cursor: wait; pointer-events: none; }
+        #googleSheetLink[data-state="error"] { background: rgba(220,53,69,0.15); color: #721c24 !important; -webkit-text-fill-color: #721c24 !important; border: 1px solid rgba(220,53,69,0.3); }
+        #googleSheetLink[data-state="error"]:hover { background: rgba(220,53,69,0.25); transform: none; }
+        #googleSheetLink[data-state="ready"] { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; -webkit-text-fill-color: white !important; }
+        .row-count-badge { font-size: 0.8125rem; color: #6c757d; font-weight: 400; margin-left: 0.5rem; }
+        .show-code-preview { font-size: 0.8125rem; color: #667eea; background: rgba(102,126,234,0.1); padding: 0.375rem 0.75rem; border-radius: 6px; font-family: 'Courier New', monospace; font-weight: 600; display: inline-block; margin-top: 0.375rem; }
+        @media (max-width:1024px) { .form-grid { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:768px) { .main-container { padding:1.5rem 1rem; } .navbar { padding:1rem 1.5rem; flex-wrap:wrap; } .stats-grid { grid-template-columns:1fr; } .card-header { flex-direction:column; align-items:flex-start; } .card-actions { width:100%; } .search-input { width:100%; } .form-grid,.form-grid-2col { grid-template-columns:1fr; } .sync-status span:last-child { display:none; } .chat-content { width:95%; max-width:none; } .confirm-content { width:95%; } .confirm-change-row { grid-template-columns:1fr; } .writers-modal-content { width:98%; } .active-writers-modal-content { width:98%; } .active-writer-show-row { grid-template-columns:auto 1fr; } .active-writer-show-type,.active-writer-show-status { display:none; } .active-writers-modal-body { padding:1rem; } .writer-history-modal-content { width:98%; } .page-header-actions { flex-direction:column; align-items:flex-start; } }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Loading...</div>
+</div>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <img src="dashtoon_logo.jpg" alt="Dashverse" loading="lazy">
+        <span class="navbar-title">Dashverse Admin Portal</span>
+    </div>
+    <div class="navbar-actions">
+        <div class="sync-status connected" id="syncStatus">
+            <span class="sync-dot connected" id="syncDot"></span>
+            <span id="syncText">Connecting...</span>
+        </div>
+        <div class="user-badge">
+            <div class="user-avatar" id="adminAvatar">A</div>
+            <span class="user-name" id="adminName">Admin</span>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="page-header">
+        <h1>Dashboard Overview</h1>
+        <p>Manage shows, production, and content — synced with Firebase &amp; Google Sheets</p>
+        <div class="page-header-actions">
+            <button class="btn btn-info" onclick="syncToSheets()" id="syncSheetsBtn">📊 Sync to Google Sheets</button>
+            <button class="btn btn-warning" onclick="forceFetchFromFirebase()" id="refreshBtn">🔄 Refresh from Firebase</button>
+            <a id="googleSheetLink" href="#" data-state="loading" data-sheet-url=""
+               class="btn btn-primary" onclick="return handleSheetLinkClick(event)"
+               title="Loading Google Sheet URL...">📄 Open Google Sheet</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card clickable" onclick="openTotalShowsModal()">
+            <div class="stat-label">📋 Total Shows</div>
+            <div class="stat-value" id="totalShows">—</div>
+            <div class="stat-sub">all shows</div>
+            <div class="stat-card-click-hint">Click to view list →</div>
+        </div>
+        <div class="stat-card clickable" onclick="openWritersModal()">
+            <div class="stat-label">📝 Registered Writers</div>
+            <div class="stat-value" id="registeredWritersCount">—</div>
+            <div class="stat-sub">from sign-ups</div>
+            <div class="stat-card-click-hint">Click to view details →</div>
+        </div>
+        <div class="stat-card clickable" onclick="openActiveWritersModal()">
+            <div class="stat-label">✅ Active Writers</div>
+            <div class="stat-value" id="activeWritersCount">—</div>
+            <div class="stat-sub">in-progress shows only</div>
+            <div class="stat-card-click-hint">Click to view dashboard →</div>
+        </div>
+        <div class="stat-card clickable" onclick="openCompletedWritersModal()">
+            <div class="stat-label">🏆 Completed Writers</div>
+            <div class="stat-value" id="completedWritersCount">—</div>
+            <div class="stat-sub">shows marked completed</div>
+            <div class="stat-card-click-hint">Click to view list →</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">✔ Completed Shows</div>
+            <div class="stat-value" id="completedCount">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Licensed Shows</div>
+            <div class="stat-value" id="licensedCount">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Payment Pending</div>
+            <div class="stat-value" id="pendingPaymentCount">—</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">All Shows <span class="row-count-badge" id="rowCountBadge"></span></h2>
+            <div class="card-actions">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search shows..." maxlength="100">
+                <button class="btn btn-success" onclick="openAddModal()">➕ Add Show</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="data-table" id="mainTable">
+                <thead>
+                    <tr>
+                        <th class="locked-header">Show Code</th>
+                        <th class="locked-header">Show Chinese Name</th>
+                        <th class="locked-header">Show Working Name</th>
+                        <th class="locked-header">Language</th>
+                        <th class="locked-header">Show Type</th>
+                        <th class="locked-header">License Status</th>
+                        <th class="locked-header">Licensing Partner</th>
+                        <th>Writer Type</th><th>Status</th><th>Assigned to</th>
+                        <th>Writer ID</th><th>Email</th>
+                        <th>OG Episodes</th><th>Final Episodes</th><th>Approved Episodes</th>
+                        <th>Show Assets Link</th><th>Localization Notes</th><th>Screenplay Draft 1</th>
+                        <th>Draft 1 Comments</th><th>Screenplay Draft 2</th><th>Draft 2 Comments</th>
+                        <th>Final Screenplay</th><th>Advance Invoice</th><th>Advance Payment</th>
+                        <th>Final Invoice</th><th>Final Payment</th><th>Remarks</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr class="skeleton-row"><td><div class="skeleton-cell" style="width:80px"></div></td><td><div class="skeleton-cell" style="width:120px"></div></td><td><div class="skeleton-cell" style="width:100px"></div></td><td colspan="25"><div class="skeleton-cell" style="width:60%"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skeleton-cell" style="width:80px"></div></td><td><div class="skeleton-cell" style="width:140px"></div></td><td><div class="skeleton-cell" style="width:110px"></div></td><td colspan="25"><div class="skeleton-cell" style="width:50%"></div></td></tr>
+                    <tr class="skeleton-row"><td><div class="skeleton-cell" style="width:80px"></div></td><td><div class="skeleton-cell" style="width:100px"></div></td><td><div class="skeleton-cell" style="width:130px"></div></td><td colspan="25"><div class="skeleton-cell" style="width:70%"></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Total Shows Modal -->
+<div class="total-shows-modal" id="totalShowsModal">
+    <div class="writers-modal-content" style="max-width:820px;">
+        <div class="writers-modal-header">
+            <div class="writers-modal-header-left">
+                <div class="writers-modal-icon">📋</div>
+                <div>
+                    <div class="writers-modal-title">All Shows</div>
+                    <div class="writers-modal-subtitle">Complete list of every show on the platform</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span class="writers-modal-badge" id="totalShowsModalBadge">0 shows</span>
+                <button class="btn-close" onclick="closeTotalShowsModal()">&times;</button>
+            </div>
+        </div>
+        <div class="writers-modal-search">
+            <input type="text" id="totalShowsModalSearch" placeholder="🔍 Search by show name or code..." maxlength="100" oninput="filterTotalShowsModal()">
+        </div>
+        <div class="writers-modal-body">
+            <div id="totalShowsCardList" style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:0.625rem;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Completed Writers Modal -->
+<div class="completed-writers-modal" id="completedWritersModal">
+    <div class="writers-modal-content" style="max-width:900px;">
+        <div class="writers-modal-header" style="background:linear-gradient(135deg,rgba(40,167,69,0.08) 0%,rgba(32,201,151,0.08) 100%);border-bottom-color:rgba(40,167,69,0.15);">
+            <div class="writers-modal-header-left">
+                <div class="writers-modal-icon" style="background:linear-gradient(135deg,#28a745 0%,#20c997 100%);">🏆</div>
+                <div>
+                    <div class="writers-modal-title">Completed Writers</div>
+                    <div class="writers-modal-subtitle">Writers who have completed their assigned shows</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span class="writers-modal-badge" id="completedWritersModalBadge" style="background:linear-gradient(135deg,#28a745 0%,#20c997 100%);">0 writers</span>
+                <button class="btn-close" onclick="closeCompletedWritersModal()">&times;</button>
+            </div>
+        </div>
+        <div class="writers-modal-search">
+            <input type="text" id="completedWritersModalSearch" placeholder="🔍 Search by writer name, email, or show..." maxlength="100" oninput="filterCompletedWritersModal()">
+        </div>
+        <div class="writers-modal-body">
+            <div id="completedWritersCardList" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Registered Writers Modal -->
+<div class="writers-modal" id="writersModal">
+    <div class="writers-modal-content">
+        <div class="writers-modal-header">
+            <div class="writers-modal-header-left">
+                <div class="writers-modal-icon">📝</div>
+                <div>
+                    <div class="writers-modal-title">Registered Writers</div>
+                    <div class="writers-modal-subtitle">All writers who signed up on the platform</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span class="writers-modal-badge" id="writersModalBadge">0 writers</span>
+                <button class="btn-close" onclick="closeWritersModal()">&times;</button>
+            </div>
+        </div>
+        <div class="writers-modal-search">
+            <input type="text" id="writersModalSearch" placeholder="🔍 Search by name, email, phone, or company..." maxlength="100" oninput="filterWritersModalTable()">
+        </div>
+        <div class="writers-modal-body">
+            <div class="writers-modal-table-wrap">
+                <table class="data-table" style="min-width:900px;">
+                    <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Signed Up</th><th>Shows Assigned</th></tr></thead>
+                    <tbody id="writersModalTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Writers Modal -->
+<div class="active-writers-modal" id="activeWritersModal">
+    <div class="active-writers-modal-content">
+        <div class="active-writers-modal-header">
+            <div class="active-writers-modal-header-left">
+                <div class="active-writers-modal-icon">✅</div>
+                <div>
+                    <div class="active-writers-modal-title">Active Writers Dashboard</div>
+                    <div class="active-writers-modal-subtitle">Writers on in-progress shows (excludes Completed)</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span class="active-writers-modal-badge" id="activeWritersModalBadge">0 active</span>
+                <button class="btn-close" onclick="closeActiveWritersModal()">&times;</button>
+            </div>
+        </div>
+        <div class="active-writers-modal-toolbar">
+            <input type="text" id="activeWritersSearch" placeholder="🔍 Search by name, email, ID, or show..." maxlength="100" oninput="filterActiveWriters()">
+            <span class="active-writers-modal-toolbar-info" id="activeWritersToolbarInfo">Showing all writers</span>
+        </div>
+        <div class="active-writers-modal-body">
+            <div class="active-writer-cards" id="activeWriterCards"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Edit Modal -->
+<div class="quick-edit-modal" id="quickEditModal">
+    <div class="quick-edit-content">
+        <div class="quick-edit-header">
+            <h3 class="quick-edit-title" id="quickEditTitle">Edit</h3>
+            <button class="btn-close" onclick="closeQuickEditModal()">&times;</button>
+        </div>
+        <div class="quick-edit-body">
+            <label class="quick-edit-label" id="quickEditLabel">Value</label>
+            <input type="url" class="quick-edit-input" id="quickEditInput" placeholder="https://..." maxlength="2000">
+            <select class="quick-edit-select" id="quickEditSelect" style="display:none;"></select>
+            <div class="quick-edit-writer-dropdown" id="quickEditWriterDropdown">
+                <div class="writer-selector-wrapper">
+                    <div class="writer-dropdown-trigger" id="quickWriterTrigger" onclick="toggleQuickWriterDropdown()">
+                        <span class="placeholder-text">Select a writer...</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="writer-dropdown-panel" id="quickWriterPanel">
+                        <input type="text" class="writer-dropdown-search" id="quickWriterSearch" placeholder="🔍 Search by name or email..." oninput="filterQuickWriterList()">
+                        <div class="writer-dropdown-list" id="quickWriterList"></div>
+                        <div class="writer-dropdown-clear" onclick="clearQuickWriterSelection()">✕ Clear Selection</div>
+                    </div>
+                </div>
+                <div class="writer-autofill-info" id="writerAutofillInfo">
+                    <div class="writer-autofill-info-title">🔄 Will also auto-update</div>
+                    <div class="writer-autofill-row"><span class="writer-autofill-label">Writer ID:</span><span class="writer-autofill-value" id="autofillWriterId">—</span><span class="writer-autofill-badge">Auto</span></div>
+                    <div class="writer-autofill-row"><span class="writer-autofill-label">Email:</span><span class="writer-autofill-value" id="autofillWriterEmail">—</span><span class="writer-autofill-badge">Auto</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="quick-edit-footer">
+            <button class="btn-quick-cancel" onclick="closeQuickEditModal()">Cancel</button>
+            <button class="btn-quick-save" onclick="previewQuickEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Modal -->
+<div class="chat-modal" id="chatModal">
+    <div class="chat-content">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <h2 class="chat-title" id="chatTitle">💬 Remarks</h2>
+                <span class="chat-subtitle" id="chatSubtitle">Show Code</span>
+            </div>
+            <button class="btn-close" onclick="closeChatModal()">&times;</button>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-footer">
+            <div class="chat-input-row">
+                <textarea class="chat-input" id="chatInput" placeholder="Type a remark..." rows="1" maxlength="1000"></textarea>
+                <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Show Modal (Add/Edit) -->
+<div class="modal" id="showModal">
+    <div class="modal-content" id="modalContentWrapper">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTitle">Add New Show</h2>
+            <button class="btn-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="showForm" onsubmit="return false;">
+                <div class="form-section">
+                    <h3 class="form-section-title">📋 Basic Information</h3>
+                    <div class="form-grid-2col">
+                        <div class="form-field">
+                            <label class="form-label">Show Chinese Name<span class="asterisk">*</span></label>
+                            <input type="text" class="form-input" id="showOgName" required maxlength="200">
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Show Working Name<span class="asterisk">*</span></label>
+                            <input type="text" class="form-input" id="showEnglishName" required maxlength="200">
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Language<span class="asterisk">*</span></label>
+                            <select class="form-select" id="language" required onchange="updateShowCode()">
+                                <option value="">Select Language</option>
+                                <option value="EN">English</option>
+                                <option value="HI">Hindi</option>
+                                <option value="TA">Tamil</option>
+                                <option value="TE">Telugu</option>
+                                <option value="KN">Kannada</option>
+                                <option value="ML">Malayalam</option>
+                                <option value="BN">Bengali</option>
+                                <option value="MR">Marathi</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Show Type<span class="asterisk">*</span></label>
+                            <select class="form-select" id="showType" required onchange="updateShowCode()">
+                                <option value="">Select Type</option>
+                                <option value="OR">Originals</option>
+                                <option value="AD">Adaptation</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Show Code (Auto-generated)</label>
+                            <input type="text" class="form-input" id="showCode" readonly disabled
+                                   style="font-family:'Courier New',monospace;font-weight:600;color:#667eea;"
+                                   placeholder="Select Language & Type above">
+                            <div class="form-hint" id="showCodeHint" style="color:#667eea;"></div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">License Status<span class="asterisk">*</span></label>
+                            <select class="form-select" id="licenseStatus" required>
+                                <option value="">Select</option>
+                                <option value="Available">Available</option>
+                                <option value="Not Available">Not Available</option>
+                            </select>
+                        </div>
+                        <div class="form-field span-full">
+                            <label class="form-label">Licensing Partner</label>
+                            <input type="text" class="form-input" id="licensingPartner" maxlength="200">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section edit-only-section">
+                    <h3 class="form-section-title">👥 Team &amp; Assignment</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">Writer Type</label>
+                            <select class="form-select" id="writerType">
+                                <option value="">Select</option>
+                                <option value="Internal">Internal</option>
+                                <option value="External">External</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="status">
+                                <option value="">Select</option>
+                                <option value="Assets Shared">Assets Shared</option>
+                                <option value="Localization Notes Received">Localization Notes Received</option>
+                                <option value="Localization Discussion WIP">Localization Discussion WIP</option>
+                                <option value="Localization Completed">Localization Completed</option>
+                                <option value="Scripting WIP">Scripting WIP</option>
+                                <option value="Draft 1 (10-15 Episodes Received)">Draft 1 (10-15 Episodes Received)</option>
+                                <option value="Draft 1 (All Episodes Received)">Draft 1 (All Episodes Received)</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Paused">Paused</option>
+                            </select>
+                        </div>
+                        <div class="form-field span-full">
+                            <label class="form-label">Assign Writer</label>
+                            <div class="writer-selector-wrapper" id="modalWriterSelectorWrapper">
+                                <div class="writer-dropdown-trigger" id="modalWriterTrigger" onclick="toggleModalWriterDropdown()">
+                                    <span class="placeholder-text">Select a registered writer...</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </div>
+                                <div class="writer-dropdown-panel" id="modalWriterPanel">
+                                    <input type="text" class="writer-dropdown-search" id="modalWriterSearch" placeholder="🔍 Search..." oninput="filterModalWriterList()">
+                                    <div class="writer-dropdown-list" id="modalWriterList"></div>
+                                    <div class="writer-dropdown-clear" onclick="clearModalWriterSelection()">✕ Clear / Enter Manually</div>
+                                </div>
+                            </div>
+                            <div class="writer-selected-preview" id="modalWriterPreview">
+                                <div class="preview-row"><span class="preview-label">Name:</span><span class="preview-value" id="previewWriterName">-</span></div>
+                                <div class="preview-row"><span class="preview-label">Email:</span><span class="preview-value" id="previewWriterEmail">-</span></div>
+                                <div class="preview-row"><span class="preview-label">Phone:</span><span class="preview-value" id="previewWriterPhone">-</span></div>
+                                <div class="preview-row"><span class="preview-label">Company:</span><span class="preview-value" id="previewWriterCompany">-</span></div>
+                            </div>
+                            <div class="form-hint">Select from registered writers or enter manually below</div>
+                        </div>
+                        <div class="form-field"><label class="form-label">Assigned to</label><input type="text" class="form-input" id="assignedTo" maxlength="100"></div>
+                        <div class="form-field"><label class="form-label">Writer ID</label><input type="text" class="form-input" id="writerId" maxlength="20"></div>
+                        <div class="form-field"><label class="form-label">Writer Email</label><input type="email" class="form-input" id="writerEmail" maxlength="254"></div>
+                    </div>
+                </div>
+                <div class="form-section edit-only-section">
+                    <h3 class="form-section-title">📺 Episodes</h3>
+                    <div class="form-grid">
+                        <div class="form-field"><label class="form-label">OG Episodes</label><input type="number" class="form-input" id="ogEpisodes" min="0" max="9999"></div>
+                        <div class="form-field"><label class="form-label">Final Episodes</label><input type="number" class="form-input" id="finalEpisodes" min="0" max="9999"></div>
+                        <div class="form-field"><label class="form-label">Approved Episodes</label><input type="number" class="form-input" id="approvedEpisodes" min="0" max="9999"></div>
+                    </div>
+                </div>
+                <div class="form-section edit-only-section">
+                    <h3 class="form-section-title">🔗 Links</h3>
+                    <div class="form-grid">
+                        <div class="form-field span-full"><label class="form-label">Show Assets</label><input type="url" class="form-input" id="showAssetsLink" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Localization Notes</label><input type="url" class="form-input" id="localizationNotesLink" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Draft 1</label><input type="url" class="form-input" id="screenplayDraft1" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Draft 1 Comments</label><input type="url" class="form-input" id="draft1Comments" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Draft 2</label><input type="url" class="form-input" id="screenplayDraft2" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Draft 2 Comments</label><input type="url" class="form-input" id="draft2Comments" maxlength="2000"></div>
+                        <div class="form-field span-full"><label class="form-label">Final Screenplay</label><input type="url" class="form-input" id="finalScreenplayLink" maxlength="2000"></div>
+                    </div>
+                </div>
+                <div class="form-section edit-only-section">
+                    <h3 class="form-section-title">💰 Payment</h3>
+                    <div class="form-grid">
+                        <div class="form-field"><label class="form-label">Advance Invoice</label><input type="url" class="form-input" id="advanceInvoiceLink" maxlength="2000"></div>
+                        <div class="form-field"><label class="form-label">Advance Payment</label><select class="form-select" id="advancePaymentStatus"><option value="">Select</option><option value="Pending">Pending</option><option value="Completed">Completed</option></select></div>
+                        <div class="form-field"><label class="form-label">Final Invoice</label><input type="url" class="form-input" id="finalInvoiceLink" maxlength="2000"></div>
+                        <div class="form-field"><label class="form-label">Final Payment</label><select class="form-select" id="finalPaymentStatus"><option value="">Select</option><option value="Pending">Pending</option><option value="Completed">Completed</option></select></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-save" onclick="previewSaveShow()">Save Show</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="confirm-modal" id="confirmModal">
+    <div class="confirm-content">
+        <div class="confirm-header">
+            <div class="confirm-header-icon">⚠️</div>
+            <div class="confirm-header-text">
+                <h3 id="confirmHeaderTitle">Confirm</h3>
+                <p id="confirmHeaderDesc">Review before saving.</p>
+            </div>
+        </div>
+        <div class="confirm-body" id="confirmBody"></div>
+        <div class="confirm-footer">
+            <button class="btn-confirm-cancel" onclick="closeConfirmModal()">← Go Back</button>
+            <button class="btn-confirm-save" id="confirmSaveBtn">✓ Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Writer History Modal -->
+<div class="writer-history-modal" id="writerHistoryModal">
+    <div class="writer-history-modal-content">
+        <div class="writer-history-modal-header">
+            <div class="writer-history-modal-icon">🔄</div>
+            <div class="writer-history-modal-title-wrap">
+                <div class="writer-history-modal-title" id="writerHistoryModalTitle">Writer Change History</div>
+                <div class="writer-history-modal-subtitle" id="writerHistoryModalSubtitle">—</div>
+            </div>
+            <span class="writer-history-modal-badge" id="writerHistoryModalBadge">0 changes</span>
+            <button class="btn-close" onclick="closeWriterHistoryModal()" style="margin-left:0.5rem;">&times;</button>
+        </div>
+        <div class="writer-history-modal-body" id="writerHistoryModalBody"></div>
+        <div class="writer-history-modal-footer">
+            <button class="btn-mark-all-seen" id="markAllSeenBtn" onclick="markAllChangesSeen()">✓ Mark all as seen</button>
+            <button class="btn-confirm-cancel" onclick="closeWriterHistoryModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import {
+    auth, db, ensureInitialized, WORKER_URL,
+    onAuthStateChanged, doc, setDoc, getDoc, getDocs,
+    updateDoc, deleteDoc, collection, query, orderBy,
+    onSnapshot, getIdToken, sanitizeHTML, isValidURL,
+    isValidEmail, truncate, RateLimiter, SecureSession,
+    arrayUnion, arrayRemove,
+    buildWriterChangeEntry, markHistoryAsSeen,
+    hasUnseenWriterChange, getWriterChangeHistory
+} from './firebase.js';
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL    = `${WORKER_URL}/api/sheets-sync`;
+const SHOWS_COLLECTION   = 'shows';
+const WRITERS_COLLECTION = 'writers';
+const MAX_REMARKS        = 500;
+const MAX_REMARK_LENGTH  = 1000;
+const chatLimiter  = new RateLimiter(10, 60 * 1000);
+const saveLimiter  = new RateLimiter(5,  60 * 1000);
+const syncLimiter  = new RateLimiter(2,  60 * 1000);
+const escapeHtml   = sanitizeHTML;
+
+const SHOW_TYPE_MAP = { 'OR': 'Originals', 'AD': 'Adaptation' };
+const STATUS_OPTIONS = ['','Assets Shared','Localization Notes Received',
+    'Localization Discussion WIP','Localization Completed','Scripting WIP',
+    'Draft 1 (10-15 Episodes Received)','Draft 1 (All Episodes Received)',
+    'Completed','Paused'];
+const EDITABLE_FIELD_CONFIG = {
+    writerType:           { label:'Writer Type',        type:'select', options:['','Internal','External'] },
+    status:               { label:'Status',             type:'select', options:STATUS_OPTIONS },
+    assignedTo:           { label:'Assigned to',        type:'writer-dropdown' },
+    ogEpisodes:           { label:'OG Episodes',        type:'number', min:0, max:9999 },
+    finalEpisodes:        { label:'Final Episodes',     type:'number', min:0, max:9999 },
+    approvedEpisodes:     { label:'Approved Episodes',  type:'number', min:0, max:9999 },
+    advancePaymentStatus: { label:'Advance Payment',    type:'select', options:['','Pending','Completed'] },
+    finalPaymentStatus:   { label:'Final Payment',      type:'select', options:['','Pending','Completed'] },
+    showAssetsLink:        { label:'Show Assets Link',   type:'url' },
+    localizationNotesLink: { label:'Localization Notes', type:'url' },
+    screenplayDraft1:      { label:'Screenplay Draft 1', type:'url' },
+    draft1Comments:        { label:'Draft 1 Comments',   type:'url' },
+    screenplayDraft2:      { label:'Screenplay Draft 2', type:'url' },
+    draft2Comments:        { label:'Draft 2 Comments',   type:'url' },
+    finalScreenplayLink:   { label:'Final Screenplay',   type:'url' },
+    advanceInvoiceLink:    { label:'Advance Invoice',    type:'url' },
+    finalInvoiceLink:      { label:'Final Invoice',      type:'url' }
+};
+const WRITER_RELEVANT_FIELDS = {
+    status:'Show Status', writerStatus:'Show Status',
+    showAssetsLink:'Show Assets Link', localizationNotesLink:'Localization Notes',
+    screenplayDraft1:'Screenplay Draft 1', draft1Comments:'Draft 1 Comments',
+    screenplayDraft2:'Screenplay Draft 2', draft2Comments:'Draft 2 Comments',
+    finalScreenplayLink:'Final Screenplay', advanceInvoiceLink:'Advance Invoice',
+    advancePaymentStatus:'Advance Payment Status', finalInvoiceLink:'Final Invoice',
+    finalPaymentStatus:'Final Payment Status', assignedTo:'Assigned Writer',
+    writerId:'Writer ID', writerEmail:'Writer Email'
+};
+
+// ── Field accessors ────────────────────────────────────────────────────────────
+const getShowStatus       = s => s.status || s.writerStatus || '';
+const getDraft1Comments   = s => s.draft1Comments || s.screenplayDraft1Comments || '';
+const getDraft2Comments   = s => s.draft2Comments || s.screenplayDraft2Comments || '';
+const getOgEpisodes       = s => s.ogEpisodes || s.ogNoOfEpisodes || '';
+const getFinalEpisodes    = s => s.finalEpisodes || s.finalNoOfEpisodes || '';
+const getApprovedEpisodes = s => s.approvedEpisodes || s.totalApprovedEpisodes || '';
+const getRemarks          = s => Array.isArray(s.remarks) ? s.remarks : [];
+const getShowTypeDisplay  = code => SHOW_TYPE_MAP[code] || code || '-';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let currentUser = null, isLoggingOut = false, allShows = [];
+let editingShowCode = null, quickEditShowCode = null, quickEditField = null;
+let unsubscribeSnapshot = null, chatShowCode = null;
+let pendingShowData = null, pendingQuickEditData = null, isAddMode = false;
+let allRegisteredWriters = [], selectedModalWriter = null, selectedQuickWriter = null;
+let unsubscribeWriters = null, historyShowCode = null;
+let sheetUrlLoaded = false;
+let _renderAbortController = null;
+
+// ── Show code generation ───────────────────────────────────────────────────────
+function getNextCounterForCombo(lang, type) {
+    if (!lang || !type) return 1;
+    const prefix = `DR-${lang}-${type}-`;
+    const nums = allShows
+        .filter(s => s.showCode && s.showCode.startsWith(prefix))
+        .map(s => {
+            const m = s.showCode.match(/DR-[A-Z]{2}-[A-Z]{2}-(\d+)$/);
+            return m ? parseInt(m[1]) : 0;
+        })
+        .filter(n => n > 0 && !isNaN(n));
+    return nums.length > 0 ? Math.max(...nums) + 1 : 1;
+}
+
+function generateShowCode(lang, type) {
+    if (!lang || !type) return '';
+    const nextNum = getNextCounterForCombo(lang, type);
+    return `DR-${lang}-${type}-${String(nextNum).padStart(2, '0')}`;
+}
+
+window.updateShowCode = function() {
+    const l = document.getElementById('language').value;
+    const t = document.getElementById('showType').value;
+    const codeEl = document.getElementById('showCode');
+    const hintEl = document.getElementById('showCodeHint');
+    if (!l || !t) {
+        codeEl.value = '';
+        if (hintEl) hintEl.textContent = 'Select Language and Show Type above to generate code';
+        return;
+    }
+    const code = generateShowCode(l, t);
+    codeEl.value = code;
+    if (hintEl) hintEl.textContent = `Will be saved as: ${code}`;
+};
+
+// ── Progress bar ───────────────────────────────────────────────────────────────
+function setProgress(pct) {
+    const bar = document.getElementById('progressBar');
+    if (!bar) return;
+    bar.style.width = pct + '%';
+    if (pct >= 100) {
+        bar.classList.add('done');
+        setTimeout(() => { bar.style.width = '0'; bar.classList.remove('done'); }, 700);
+    } else { bar.classList.remove('done'); }
+}
+
+// ── Google Sheet link ──────────────────────────────────────────────────────────
+async function loadSheetUrl() {
+    const link = document.getElementById('googleSheetLink');
+    if (!link) return;
+    link.setAttribute('data-state', 'loading');
+    try {
+        const resp = await fetch(`${WORKER_URL}/api/sheet-url`, {
+            method: 'GET', headers: { 'Accept': 'application/json' }, credentials: 'omit'
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const url = (data.url || '').trim();
+        if (url && url.startsWith('https://')) {
+            link.setAttribute('data-sheet-url', url);
+            link.setAttribute('data-state', 'ready');
+            link.title = 'Open Google Sheet';
+            sheetUrlLoaded = true;
+        } else {
+            link.setAttribute('data-state', 'error');
+            link.title = 'Google Sheet URL not configured';
+        }
+    } catch(e) {
+        link.setAttribute('data-state', 'error');
+        link.title = 'Could not load Google Sheet URL';
+    }
+}
+
+window.handleSheetLinkClick = function(event) {
+    const link = document.getElementById('googleSheetLink');
+    const state = link.getAttribute('data-state');
+    const url = link.getAttribute('data-sheet-url') || '';
+    event.preventDefault();
+    if (state === 'loading') { showToast('⏳ Still loading Sheet URL...', 'warning'); return false; }
+    if (state === 'error' || !url) { showToast('⚠️ Sheet URL not configured.', 'warning'); return false; }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return false;
+};
+
+// ── UI helpers ─────────────────────────────────────────────────────────────────
+function setSyncStatus(s, t) {
+    const a = document.getElementById('syncStatus');
+    const b = document.getElementById('syncDot');
+    const c = document.getElementById('syncText');
+    if (a) a.className = `sync-status ${s}`;
+    if (b) b.className = `sync-dot ${s}`;
+    if (c) c.textContent = t;
+}
+
+function showToast(m, t = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = m;
+    toast.className = 'toast show';
+    if (t === 'error') toast.classList.add('error');
+    if (t === 'warning') toast.classList.add('warning');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+function getCurrentSearchTerm() {
+    return (document.getElementById('searchInput')?.value || '').trim();
+}
+
+function filterShows(term) {
+    const t = truncate(term, 100).toLowerCase();
+    return allShows.filter(s => Object.entries(s).some(([k, v]) => {
+        if (['_id', 'remarks', 'runtime', 'writerChangeHistory'].includes(k)) return false;
+        return v ? v.toString().toLowerCase().includes(t) : false;
+    }));
+}
+
+function setModalMode(mode) {
+    const w = document.getElementById('modalContentWrapper');
+    if (mode === 'add') { isAddMode = true; w.classList.add('add-mode'); }
+    else { isAddMode = false; w.classList.remove('add-mode'); }
+}
+
+// ── Status class map ───────────────────────────────────────────────────────────
+const STATUS_CLASS_MAP = {
+    'Assets Shared': 'status-assets-shared',
+    'Localization Notes Received': 'status-localization-notes-received',
+    'Localization Discussion WIP': 'status-localization-discussion-wip',
+    'Localization Completed': 'status-localization-completed',
+    'Scripting WIP': 'status-scripting-wip',
+    'Draft 1 (10-15 Episodes Received)': 'status-draft1-partial',
+    'Draft 1 (All Episodes Received)': 'status-draft1-all',
+    'Completed': 'status-completed',
+    'Paused': 'status-paused'
+};
+function getStatusClass(s) { return STATUS_CLASS_MAP[s] || 'status-default'; }
+
+// ── Row builder ────────────────────────────────────────────────────────────────
+function buildRowHTML(show) {
+    const sc = escapeHtml(show.showCode || '');
+    const ds = getShowStatus(show);
+    const d1c = getDraft1Comments(show);
+    const d2c = getDraft2Comments(show);
+    const doe = getOgEpisodes(show);
+    const dfe = getFinalEpisodes(show);
+    const dae = getApprovedEpisodes(show);
+    const remarks = getRemarks(show);
+    const remarkCount = remarks.length;
+    const lastRemark = remarkCount > 0 ? remarks[remarkCount - 1] : null;
+    const lastRemarkPreview = lastRemark ? escapeHtml(truncate(lastRemark.text || '', 30)) : '';
+    const rl = (l, f, n) => {
+        const sl = escapeHtml(l), sf = escapeHtml(f), sn = escapeHtml(n);
+        return l
+            ? `<div class="link-cell"><a href="${sl}" target="_blank" rel="noopener noreferrer">View</a><button class="btn-link-edit" onclick="openQuickEdit('${sc}','${sf}','${sn}')">✏️</button></div>`
+            : `<div class="link-cell"><span style="color:#6c757d">-</span><button class="btn-link-edit" onclick="openQuickEdit('${sc}','${sf}','${sn}')">➕</button></div>`;
+    };
+    const et = (f, v) => `<div class="editable-cell"><span>${v}</span><button class="btn-inline-edit" onclick="openQuickEdit('${sc}','${escapeHtml(f)}','${escapeHtml(EDITABLE_FIELD_CONFIG[f]?.label || f)}')">✏️</button></div>`;
+    const pc = s => s === 'Completed' ? 'payment-completed' : 'payment-pending';
+    const wi = (show.lastUpdatedBy && !show.lastUpdatedBy.endsWith('@dashverse.ai'))
+        ? '<span class="writer-update-indicator" title="Writer updated"></span>' : '';
+    const history = getWriterChangeHistory(show);
+    const hasHistory = history.length > 0;
+    const effectiveUnseen = hasUnseenWriterChange(show);
+    const writerChangeBadge = hasHistory
+        ? (effectiveUnseen
+            ? `<button class="writer-change-warning-btn unseen" onclick="openWriterHistoryModal('${sc}')">⚠️ ${history.length} change${history.length !== 1 ? 's' : ''}</button>`
+            : `<button class="writer-change-warning-btn seen" onclick="openWriterHistoryModal('${sc}')">🕐 ${history.length} change${history.length !== 1 ? 's' : ''}</button>`)
+        : '';
+    return `<td class="locked-col"><span class="show-code-badge">${sc || '-'}</span>${wi}</td>
+<td class="locked-col"><strong>${escapeHtml(show.showOgName) || '-'}</strong></td>
+<td class="locked-col">${escapeHtml(show.showEnglishName) || '-'}</td>
+<td class="locked-col">${escapeHtml(show.language) || '-'}</td>
+<td class="locked-col">${getShowTypeDisplay(show.showType)}</td>
+<td class="locked-col"><span class="license-badge ${show.licenseStatus === 'Available' ? 'license-available' : 'license-not-available'}">${escapeHtml(show.licenseStatus) || '-'}</span></td>
+<td class="locked-col">${escapeHtml(show.licensingPartner) || '-'}</td>
+<td>${et('writerType', escapeHtml(show.writerType) || '-')}</td>
+<td><div class="editable-cell"><span class="status-badge ${getStatusClass(ds)}">${escapeHtml(ds) || '-'}</span><button class="btn-inline-edit" onclick="openQuickEdit('${sc}','status','Status')">✏️</button></div></td>
+<td>${et('assignedTo', escapeHtml(show.assignedTo) || '-')}</td>
+<td><div class="writer-change-cell">${show.writerId ? `<span class="writer-id-badge">${escapeHtml(show.writerId)}</span>` : '<span style="color:#6c757d">-</span>'}${writerChangeBadge}</div></td>
+<td>${show.writerEmail ? `<span class="email-badge">${escapeHtml(show.writerEmail)}</span>` : '<span style="color:#6c757d">-</span>'}</td>
+<td>${et('ogEpisodes', doe || '-')}</td>
+<td>${et('finalEpisodes', dfe || '-')}</td>
+<td>${et('approvedEpisodes', dae || '-')}</td>
+<td>${rl(show.showAssetsLink, 'showAssetsLink', 'Show Assets Link')}</td>
+<td>${rl(show.localizationNotesLink, 'localizationNotesLink', 'Localization Notes')}</td>
+<td>${rl(show.screenplayDraft1, 'screenplayDraft1', 'Screenplay Draft 1')}</td>
+<td>${rl(d1c, 'draft1Comments', 'Draft 1 Comments')}</td>
+<td>${rl(show.screenplayDraft2, 'screenplayDraft2', 'Screenplay Draft 2')}</td>
+<td>${rl(d2c, 'draft2Comments', 'Draft 2 Comments')}</td>
+<td>${rl(show.finalScreenplayLink, 'finalScreenplayLink', 'Final Screenplay')}</td>
+<td>${rl(show.advanceInvoiceLink, 'advanceInvoiceLink', 'Advance Invoice')}</td>
+<td><div class="editable-cell"><span class="payment-badge ${pc(show.advancePaymentStatus)}">${escapeHtml(show.advancePaymentStatus) || '-'}</span><button class="btn-inline-edit" onclick="openQuickEdit('${sc}','advancePaymentStatus','Advance Payment')">✏️</button></div></td>
+<td>${rl(show.finalInvoiceLink, 'finalInvoiceLink', 'Final Invoice')}</td>
+<td><div class="editable-cell"><span class="payment-badge ${pc(show.finalPaymentStatus)}">${escapeHtml(show.finalPaymentStatus) || '-'}</span><button class="btn-inline-edit" onclick="openQuickEdit('${sc}','finalPaymentStatus','Final Payment')">✏️</button></div></td>
+<td><div class="remarks-cell"><span class="remarks-count ${remarkCount > 0 ? 'has-messages' : 'no-messages'}" onclick="openChatModal('${sc}')">${remarkCount > 0 ? `💬 ${remarkCount}` : '💬 0'}</span>${lastRemarkPreview ? `<span class="remarks-last">${lastRemarkPreview}...</span>` : ''}</div></td>
+<td><div class="action-buttons"><button class="btn-icon btn-edit" onclick="editShow('${sc}')">✏️</button><button class="btn-icon btn-delete" onclick="deleteShow('${sc}')">🗑️</button></div></td>`;
+}
+
+// ── Chunked render ─────────────────────────────────────────────────────────────
+function renderTable(shows) {
+    if (_renderAbortController) _renderAbortController.aborted = true;
+    const ctl = { aborted: false };
+    _renderAbortController = ctl;
+    const tbody = document.getElementById('tableBody');
+    const badge = document.getElementById('rowCountBadge');
+    if (!shows.length) {
+        tbody.innerHTML = `<tr><td colspan="28" class="empty-state"><div class="empty-state-icon">📋</div><p>No shows found.</p></td></tr>`;
+        if (badge) badge.textContent = '';
+        return;
+    }
+    if (badge) badge.textContent = `(${shows.length})`;
+    const FIRST = 10;
+    const frag = document.createDocumentFragment();
+    shows.slice(0, Math.min(FIRST, shows.length)).forEach(show => {
+        const row = document.createElement('tr');
+        row.innerHTML = buildRowHTML(show);
+        frag.appendChild(row);
+    });
+    tbody.innerHTML = '';
+    tbody.appendChild(frag);
+    if (shows.length > FIRST) renderChunked(shows, FIRST, tbody, ctl);
+}
+
+function renderChunked(shows, startIndex, tbody, ctl) {
+    const CHUNK = 20;
+    let idx = startIndex;
+    function processChunk(deadline) {
+        if (ctl.aborted) return;
+        const hasTime = () => deadline ? deadline.timeRemaining() > 2 : true;
+        while (idx < shows.length && hasTime()) {
+            const end = Math.min(idx + CHUNK, shows.length);
+            const frag = document.createDocumentFragment();
+            for (let i = idx; i < end; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = buildRowHTML(shows[i]);
+                frag.appendChild(row);
+            }
+            tbody.appendChild(frag);
+            idx = end;
+        }
+        if (idx < shows.length && !ctl.aborted) {
+            if ('requestIdleCallback' in window) requestIdleCallback(processChunk, { timeout: 500 });
+            else requestAnimationFrame(() => processChunk(null));
+        }
+    }
+    if ('requestIdleCallback' in window) requestIdleCallback(processChunk, { timeout: 500 });
+    else requestAnimationFrame(() => processChunk(null));
+}
+
+// ── cleanShowForSheets ─────────────────────────────────────────────────────────
+function cleanShowForSheets(s) {
+    return {
+        showCode: String(s.showCode || ''), showOgName: String(s.showOgName || ''),
+        showEnglishName: String(s.showEnglishName || ''), language: String(s.language || ''),
+        showType: String(s.showType || ''), licenseStatus: String(s.licenseStatus || ''),
+        licensingPartner: String(s.licensingPartner || ''), writerType: String(s.writerType || ''),
+        status: String(getShowStatus(s)), writerStatus: String(getShowStatus(s)),
+        assignedTo: String(s.assignedTo || ''), writerId: String(s.writerId || ''),
+        writerEmail: String(s.writerEmail || ''), ogEpisodes: String(getOgEpisodes(s) || ''),
+        finalEpisodes: String(getFinalEpisodes(s) || ''), approvedEpisodes: String(getApprovedEpisodes(s) || ''),
+        showAssetsLink: String(s.showAssetsLink || ''), localizationNotesLink: String(s.localizationNotesLink || ''),
+        screenplayDraft1: String(s.screenplayDraft1 || ''), draft1Comments: String(getDraft1Comments(s) || ''),
+        screenplayDraft2: String(s.screenplayDraft2 || ''), draft2Comments: String(getDraft2Comments(s) || ''),
+        finalScreenplayLink: String(s.finalScreenplayLink || ''), advanceInvoiceLink: String(s.advanceInvoiceLink || ''),
+        advancePaymentStatus: String(s.advancePaymentStatus || ''), finalInvoiceLink: String(s.finalInvoiceLink || ''),
+        finalPaymentStatus: String(s.finalPaymentStatus || ''),
+        createdAt: String(s.createdAt || new Date().toISOString()), updatedAt: String(s.updatedAt || new Date().toISOString())
+    };
+}
+
+// ── Sync ───────────────────────────────────────────────────────────────────────
+async function syncToGoogleSheets(action, data) {
+    if (!APPS_SCRIPT_URL) return { success: false, error: 'No sync URL' };
+    try {
+        let idToken = '';
+        try { idToken = await getIdToken(true); } catch(e) {}
+        const payload = { action, idToken };
+        if (data && typeof data === 'object') Object.assign(payload, data);
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+        if (!response.ok) return { success: false, error: `HTTP ${response.status}` };
+        try { return JSON.parse(responseText); } catch(_) { return { success: true }; }
+    } catch(e) { return { success: false, error: e.message }; }
+}
+
+async function backgroundSyncToSheets(action, data) {
+    try { await syncToGoogleSheets(action, data); } catch(e) {}
+}
+
+window.syncToSheets = async function() {
+    if (!syncLimiter.canProceed()) { showToast('Please wait.', 'warning'); return; }
+    const btn = document.getElementById('syncSheetsBtn');
+    btn.disabled = true; btn.innerHTML = '⏳ Syncing...'; setSyncStatus('syncing', 'Syncing...');
+    try {
+        const cleanShows = allShows.map(cleanShowForSheets);
+        const result = await syncToGoogleSheets('syncFromFirebase', { shows: cleanShows });
+        showToast(result.success ? `✅ Synced ${cleanShows.length} shows!` : `⚠️ ${result.error || 'Check console'}`, result.success ? 'success' : 'warning');
+        setSyncStatus('connected', result.success ? 'Synced' : 'Live');
+    } catch(e) {
+        showToast('❌ Sync failed: ' + e.message, 'error'); setSyncStatus('error', 'Sync failed');
+    }
+    btn.disabled = false; btn.innerHTML = '📊 Sync to Google Sheets';
+};
+
+window.forceFetchFromFirebase = async function() {
+    if (!syncLimiter.canProceed()) { showToast('Please wait.', 'warning'); return; }
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true; btn.innerHTML = '⏳ Refreshing...';
+    try {
+        await loadShowsFromFirebase();
+        await loadRegisteredWriters();
+        showToast('✅ Refreshed!');
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
+    btn.disabled = false; btn.innerHTML = '🔄 Refresh from Firebase';
+};
+
+// ── Firebase CRUD ──────────────────────────────────────────────────────────────
+async function loadShowsFromFirebase() {
+    setSyncStatus('syncing', 'Loading...');
+    try {
+        const q = query(collection(db, SHOWS_COLLECTION), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        allShows = [];
+        snap.forEach(d => { const data = d.data(); data._id = d.id; allShows.push(data); });
+        updateUI();
+        setSyncStatus('connected', 'Connected');
+    } catch(e) {
+        setSyncStatus('error', 'Error');
+        showToast('Load failed: ' + e.message, 'error');
+    }
+}
+
+// ── Real-time listener ─────────────────────────────────────────────────────────
+function setupRealtimeListener() {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeSnapshot = onSnapshot(
+        query(collection(db, SHOWS_COLLECTION), orderBy('createdAt', 'desc')),
+        snap => {
+            allShows = [];
+            snap.forEach(d => { const data = d.data(); data._id = d.id; allShows.push(data); });
+
+            const currentSearch = getCurrentSearchTerm();
+            updateStats();
+            renderTable(currentSearch ? filterShows(currentSearch) : allShows);
+            setSyncStatus('connected', 'Live');
+
+            if (chatShowCode) {
+                const s = allShows.find(x => x.showCode === chatShowCode);
+                if (s) renderChatMessages(getRemarks(s));
+            }
+
+            if (document.getElementById('activeWritersModal').classList.contains('show')) {
+                renderActiveWriterCards(document.getElementById('activeWritersSearch').value.trim());
+            }
+
+            if (historyShowCode && document.getElementById('writerHistoryModal').classList.contains('show')) {
+                const s = allShows.find(x => x.showCode === historyShowCode);
+                if (s) renderWriterHistoryModal(s);
+            }
+        },
+        e => { setSyncStatus('error', 'Disconnected'); console.error('Snapshot error:', e); }
+    );
+}
+
+async function saveShowToFirebase(d) {
+    setSyncStatus('syncing', 'Saving...');
+    try {
+        await setDoc(doc(db, SHOWS_COLLECTION, d.showCode), d, { merge: true });
+        setSyncStatus('connected', 'Saved');
+        return true;
+    } catch(e) {
+        setSyncStatus('error', 'Failed');
+        showToast('Save failed: ' + e.message, 'error');
+        return false;
+    }
+}
+
+async function deleteShowFromFirebase(c) {
+    setSyncStatus('syncing', 'Deleting...');
+    try {
+        await deleteDoc(doc(db, SHOWS_COLLECTION, c));
+        setSyncStatus('connected', 'Deleted');
+        return true;
+    } catch(e) {
+        setSyncStatus('error', 'Failed');
+        showToast('Delete failed: ' + e.message, 'error');
+        return false;
+    }
+}
+
+async function updateShowFieldInFirebase(c, fieldsOrField, value) {
+    setSyncStatus('syncing', 'Updating...');
+    try {
+        let updateObj = {};
+        if (typeof fieldsOrField === 'object' && !Array.isArray(fieldsOrField)) {
+            updateObj = { ...fieldsOrField };
+        } else {
+            updateObj[fieldsOrField] = value;
+            if (fieldsOrField === 'status') updateObj.writerStatus = value;
+            if (fieldsOrField === 'writerStatus') updateObj.status = value;
+        }
+        updateObj.updatedAt = new Date().toISOString();
+        await updateDoc(doc(db, SHOWS_COLLECTION, c), updateObj);
+        setSyncStatus('connected', 'Updated');
+        return true;
+    } catch(e) {
+        setSyncStatus('error', 'Failed');
+        showToast('Update failed: ' + e.message, 'error');
+        return false;
+    }
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+    if (isLoggingOut) return;
+    if (user && user.emailVerified) {
+        if (!user.email.endsWith('@dashverse.ai')) {
+            window.location.replace('writer-dashboard.html');
+            return;
+        }
+        currentUser = user;
+        const ud = SecureSession.getUserData() || {};
+        const n = ud.name || user.email.split('@')[0];
+        document.getElementById('adminName').textContent = n.split(' ')[0];
+        document.getElementById('adminAvatar').textContent = n.charAt(0).toUpperCase();
+        setProgress(10);
+        await Promise.allSettled([
+            loadShowsFromFirebase().then(() => setProgress(40)),
+            loadRegisteredWriters().then(() => setProgress(60)),
+            loadSheetUrl().then(() => setProgress(80))
+        ]);
+        setupRealtimeListener();
+        setupWritersListener();
+        setProgress(100);
+    } else {
+        window.location.replace('login.html');
+    }
+});
+
+function updateUI() { updateStats(); renderTable(allShows); }
+
+function updateStats() {
+    document.getElementById('totalShows').textContent             = allShows.length;
+    document.getElementById('registeredWritersCount').textContent = allRegisteredWriters.length;
+    document.getElementById('completedCount').textContent         = allShows.filter(s => getShowStatus(s) === 'Completed').length;
+    document.getElementById('licensedCount').textContent          = allShows.filter(s => s.licenseStatus === 'Available').length;
+    document.getElementById('pendingPaymentCount').textContent    = allShows.filter(s => s.advancePaymentStatus === 'Pending' || s.finalPaymentStatus === 'Pending').length;
+    document.getElementById('activeWritersCount').textContent     = buildActiveWritersMap().size;
+    document.getElementById('completedWritersCount').textContent  = buildCompletedWritersMap().size;
+}
+
+// ── Writers loaders ────────────────────────────────────────────────────────────
+async function loadRegisteredWriters() {
+    try {
+        const snap = await getDocs(collection(db, WRITERS_COLLECTION));
+        allRegisteredWriters = [];
+        snap.forEach(d => { const data = d.data(); data._id = d.id; allRegisteredWriters.push(data); });
+        allRegisteredWriters.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        updateStats();
+    } catch(e) { console.error('Failed to load writers:', e); }
+}
+
+function setupWritersListener() {
+    if (unsubscribeWriters) unsubscribeWriters();
+    unsubscribeWriters = onSnapshot(
+        collection(db, WRITERS_COLLECTION),
+        snap => {
+            allRegisteredWriters = [];
+            snap.forEach(d => { const data = d.data(); data._id = d.id; allRegisteredWriters.push(data); });
+            allRegisteredWriters.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            updateStats();
+        },
+        e => console.error('Writers listener:', e)
+    );
+}
+
+// ── Active Writers map ─────────────────────────────────────────────────────────
+function buildActiveWritersMap() {
+    const wm = new Map();
+    allShows.forEach(s => {
+        if (getShowStatus(s) === 'Completed') return;
+        if (s.writerId && s.assignedTo) {
+            if (!wm.has(s.writerId)) wm.set(s.writerId, { writerId: s.writerId, writerName: s.assignedTo, writerEmail: s.writerEmail || '', shows: [] });
+            const w = wm.get(s.writerId);
+            if (!w.writerEmail && s.writerEmail) w.writerEmail = s.writerEmail;
+            w.shows.push(s);
+        }
+    });
+    return wm;
+}
+
+// ── Completed Writers map ──────────────────────────────────────────────────────
+function buildCompletedWritersMap() {
+    const wm = new Map();
+    allShows.forEach(s => {
+        if (getShowStatus(s) !== 'Completed') return;
+        if (!s.assignedTo) return;
+        const key = s.writerId || s.writerEmail || s.assignedTo;
+        if (!wm.has(key)) wm.set(key, { writerId: s.writerId || '', writerName: s.assignedTo, writerEmail: s.writerEmail || '', shows: [] });
+        const w = wm.get(key);
+        if (!w.writerEmail && s.writerEmail) w.writerEmail = s.writerEmail;
+        if (!w.writerId && s.writerId) w.writerId = s.writerId;
+        w.shows.push(s);
+    });
+    return wm;
+}
+
+// ── Total Shows Modal ──────────────────────────────────────────────────────────
+window.openTotalShowsModal = function() {
+    document.getElementById('totalShowsModalSearch').value = '';
+    renderTotalShowsModal();
+    document.getElementById('totalShowsModal').classList.add('show');
+    setTimeout(() => document.getElementById('totalShowsModalSearch').focus(), 150);
+};
+window.closeTotalShowsModal = function() { document.getElementById('totalShowsModal').classList.remove('show'); };
+window.filterTotalShowsModal = function() { renderTotalShowsModal(document.getElementById('totalShowsModalSearch').value.trim()); };
+
+function renderTotalShowsModal(filterTerm = '') {
+    const container = document.getElementById('totalShowsCardList');
+    let shows = filterTerm
+        ? allShows.filter(s => { const t = filterTerm.toLowerCase(); return (s.showOgName || '').toLowerCase().includes(t) || (s.showEnglishName || '').toLowerCase().includes(t) || (s.showCode || '').toLowerCase().includes(t); })
+        : allShows;
+    document.getElementById('totalShowsModalBadge').textContent = `${allShows.length} show${allShows.length !== 1 ? 's' : ''}`;
+    if (!shows.length) {
+        container.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:#6c757d;"><div style="font-size:3rem;opacity:0.3;margin-bottom:0.75rem;">📋</div><p>${filterTerm ? 'No shows match your search.' : 'No shows yet.'}</p></div>`;
+        return;
+    }
+    container.innerHTML = shows.map(s => {
+        const status = getShowStatus(s), statusCls = getStatusClass(status), showType = getShowTypeDisplay(s.showType);
+        return `<div class="show-list-card">
+            <span class="show-list-card-code">${escapeHtml(s.showCode || '-')}</span>
+            <div class="show-list-card-names">
+                <div class="show-list-card-chinese">${escapeHtml(s.showOgName || 'Untitled')}</div>
+                <div class="show-list-card-working">${s.showEnglishName ? `Working Name: ${escapeHtml(s.showEnglishName)}` : '<em style="color:#adb5bd">No working name</em>'}</div>
+            </div>
+            <div class="show-list-card-meta">
+                ${showType ? `<span class="show-list-card-type">${escapeHtml(showType)}</span>` : ''}
+                ${status ? `<span class="status-badge ${statusCls}">${escapeHtml(status)}</span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+document.getElementById('totalShowsModal').addEventListener('click', function(e) { if (e.target === this) closeTotalShowsModal(); });
+
+// ── Completed Writers Modal ────────────────────────────────────────────────────
+window.openCompletedWritersModal = function() {
+    document.getElementById('completedWritersModalSearch').value = '';
+    renderCompletedWritersModal();
+    document.getElementById('completedWritersModal').classList.add('show');
+    setTimeout(() => document.getElementById('completedWritersModalSearch').focus(), 150);
+};
+window.closeCompletedWritersModal = function() { document.getElementById('completedWritersModal').classList.remove('show'); };
+window.filterCompletedWritersModal = function() { renderCompletedWritersModal(document.getElementById('completedWritersModalSearch').value.trim()); };
+
+function renderCompletedWritersModal(filterTerm = '') {
+    const container = document.getElementById('completedWritersCardList');
+    const wm = buildCompletedWritersMap();
+    let writers = Array.from(wm.values()).sort((a, b) => (a.writerName || '').localeCompare(b.writerName || ''));
+    if (filterTerm) {
+        const term = filterTerm.toLowerCase();
+        writers = writers.filter(w =>
+            (w.writerName || '').toLowerCase().includes(term) ||
+            (w.writerEmail || '').toLowerCase().includes(term) ||
+            (w.writerId || '').toLowerCase().includes(term) ||
+            w.shows.some(s => (s.showOgName || '').toLowerCase().includes(term) || (s.showEnglishName || '').toLowerCase().includes(term) || (s.showCode || '').toLowerCase().includes(term))
+        );
+    }
+    document.getElementById('completedWritersModalBadge').textContent = `${wm.size} writer${wm.size !== 1 ? 's' : ''}`;
+    if (!writers.length) {
+        container.innerHTML = `<div style="text-align:center;padding:4rem 2rem;color:#6c757d;"><div style="font-size:4rem;opacity:0.25;margin-bottom:1rem;">🏆</div><h3 style="font-size:1.125rem;font-weight:600;color:#495057;margin-bottom:0.5rem;">${filterTerm ? 'No writers match' : 'No Completed Writers Yet'}</h3><p>${filterTerm ? 'Try a different search term.' : 'Writers appear here when their shows are marked Completed.'}</p></div>`;
+        return;
+    }
+    container.innerHTML = writers.map(w => {
+        const initials = (w.writerName || 'W').split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const regWriter = allRegisteredWriters.find(rw => rw.email && w.writerEmail && rw.email.toLowerCase() === w.writerEmail.toLowerCase());
+        const phone = regWriter?.phone || '', company = regWriter?.company || '';
+        const showsHtml = w.shows.map(s => `
+            <div class="completed-writer-show-row">
+                <span class="completed-writer-show-code">${escapeHtml(s.showCode || '-')}</span>
+                <span class="completed-writer-show-name">${escapeHtml(s.showOgName || 'Untitled')}${s.showEnglishName ? `<span style="color:#adb5bd;font-weight:400;font-size:0.8rem;"> / ${escapeHtml(s.showEnglishName)}</span>` : ''}</span>
+                <span class="completed-writer-show-badge">✅ Completed</span>
+            </div>`).join('');
+        return `<div class="completed-writer-card">
+            <div class="completed-writer-card-header">
+                <div class="completed-writer-avatar">${initials}</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="completed-writer-name">${escapeHtml(w.writerName)}</div>
+                    <div class="completed-writer-meta">
+                        ${w.writerId ? `<span class="completed-writer-id-badge">${escapeHtml(w.writerId)}</span>` : ''}
+                        ${w.writerEmail ? `<span style="font-size:0.8125rem;color:#764ba2;">📧 ${escapeHtml(w.writerEmail)}</span>` : ''}
+                        ${phone ? `<span style="font-size:0.8125rem;color:#6c757d;">📱 ${escapeHtml(phone)}</span>` : ''}
+                        ${company ? `<span style="font-size:0.8125rem;color:#6c757d;">🏢 ${escapeHtml(company)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="completed-writer-shows-count">${w.shows.length} Show${w.shows.length !== 1 ? 's' : ''} Completed</div>
+            </div>
+            <div class="completed-writer-shows">${showsHtml}</div>
+        </div>`;
+    }).join('');
+}
+document.getElementById('completedWritersModal').addEventListener('click', function(e) { if (e.target === this) closeCompletedWritersModal(); });
+
+// ── Active Writers Modal ───────────────────────────────────────────────────────
+window.openActiveWritersModal = function() {
+    document.getElementById('activeWritersSearch').value = '';
+    renderActiveWriterCards('');
+    document.getElementById('activeWritersModal').classList.add('show');
+    setTimeout(() => document.getElementById('activeWritersSearch').focus(), 150);
+};
+window.closeActiveWritersModal = function() { document.getElementById('activeWritersModal').classList.remove('show'); };
+window.filterActiveWriters = function() { renderActiveWriterCards(document.getElementById('activeWritersSearch').value.trim()); };
+
+function renderActiveWriterCards(filterTerm = '') {
+    const container = document.getElementById('activeWriterCards');
+    const wm = buildActiveWritersMap();
+    let writers = Array.from(wm.values()).sort((a, b) => a.writerId.localeCompare(b.writerId));
+    if (filterTerm) {
+        const term = filterTerm.toLowerCase();
+        writers = writers.filter(w =>
+            (w.writerName || '').toLowerCase().includes(term) ||
+            (w.writerEmail || '').toLowerCase().includes(term) ||
+            (w.writerId || '').toLowerCase().includes(term) ||
+            w.shows.some(s => (s.showOgName || '').toLowerCase().includes(term) || (s.showEnglishName || '').toLowerCase().includes(term) || (s.showCode || '').toLowerCase().includes(term))
+        );
+    }
+    document.getElementById('activeWritersModalBadge').textContent = `${wm.size} active`;
+    document.getElementById('activeWritersToolbarInfo').textContent = filterTerm
+        ? `Showing ${writers.length} of ${wm.size} writer${wm.size !== 1 ? 's' : ''}`
+        : `Showing all ${wm.size} writer${wm.size !== 1 ? 's' : ''}`;
+    if (!writers.length) {
+        container.innerHTML = `<div class="active-writer-empty"><div class="active-writer-empty-icon">${filterTerm ? '🔍' : '👥'}</div><h3>${filterTerm ? 'No writers match' : 'No Active Writers'}</h3><p>${filterTerm ? 'Try different search.' : 'Assign writers to in-progress shows.'}</p></div>`;
+        return;
+    }
+    container.innerHTML = writers.map(w => {
+        const regWriter = allRegisteredWriters.find(rw => rw.email && w.writerEmail && rw.email.toLowerCase() === w.writerEmail.toLowerCase());
+        const initials = (w.writerName || 'W').split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const phone = regWriter?.phone || '', company = regWriter?.company || '';
+        const showsHtml = w.shows.map(s => {
+            const status = getShowStatus(s);
+            return `<div class="active-writer-show-row"><span class="active-writer-show-code">${escapeHtml(s.showCode || '-')}</span><span class="active-writer-show-name">${escapeHtml(s.showOgName || s.showEnglishName || 'Untitled')}${s.showEnglishName && s.showOgName ? `<span style="color:#adb5bd;font-weight:400;font-size:0.8rem;"> / ${escapeHtml(s.showEnglishName)}</span>` : ''}</span><span class="active-writer-show-type">${escapeHtml(getShowTypeDisplay(s.showType))}</span><span class="active-writer-show-status">${status ? `<span class="status-badge ${getStatusClass(status)}">${escapeHtml(status)}</span>` : '<span style="color:#adb5bd;font-size:0.75rem;">—</span>'}</span></div>`;
+        }).join('');
+        return `<div class="active-writer-card"><div class="active-writer-card-header"><div class="active-writer-avatar">${initials}</div><div class="active-writer-info"><div class="active-writer-name">${escapeHtml(w.writerName)}</div><div class="active-writer-meta"><span class="active-writer-id">${escapeHtml(w.writerId)}</span>${w.writerEmail ? `<span class="active-writer-email-text">📧 ${escapeHtml(w.writerEmail)}</span>` : ''} ${phone ? `<span class="active-writer-phone-text">📱 ${escapeHtml(phone)}</span>` : ''} ${company ? `<span class="active-writer-phone-text">🏢 ${escapeHtml(company)}</span>` : ''}</div></div><div class="active-writer-shows-count">${w.shows.length} Show${w.shows.length !== 1 ? 's' : ''}</div></div><div class="active-writer-shows"><div class="active-writer-shows-title">Assigned Shows</div><div class="active-writer-shows-list">${showsHtml}</div></div></div>`;
+    }).join('');
+}
+document.getElementById('activeWritersModal').addEventListener('click', function(e) { if (e.target === this) closeActiveWritersModal(); });
+
+// ── Registered Writers Modal ───────────────────────────────────────────────────
+window.openWritersModal = function() {
+    document.getElementById('writersModalSearch').value = '';
+    renderWritersModalTable();
+    document.getElementById('writersModalBadge').textContent = `${allRegisteredWriters.length} writer${allRegisteredWriters.length !== 1 ? 's' : ''}`;
+    document.getElementById('writersModal').classList.add('show');
+    setTimeout(() => document.getElementById('writersModalSearch').focus(), 150);
+};
+window.closeWritersModal = function() { document.getElementById('writersModal').classList.remove('show'); };
+window.filterWritersModalTable = function() { renderWritersModalTable(document.getElementById('writersModalSearch').value.trim()); };
+
+function renderWritersModalTable(filterTerm = '') {
+    const tbody = document.getElementById('writersModalTableBody');
+    let writers = filterTerm
+        ? allRegisteredWriters.filter(w => { const t = filterTerm.toLowerCase(); return (w.name || '').toLowerCase().includes(t) || (w.email || '').toLowerCase().includes(t) || (w.company || '').toLowerCase().includes(t) || (w.phone || '').toLowerCase().includes(t); })
+        : allRegisteredWriters;
+    if (!writers.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="writers-modal-empty"><div style="font-size:3rem;opacity:0.3;margin-bottom:0.75rem;">👥</div><p>${filterTerm ? 'No writers match.' : 'No registered writers.'}</p></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = writers.map(w => {
+        const sa = allShows.filter(s => s.writerEmail && s.writerEmail.toLowerCase() === (w.email || '').toLowerCase());
+        const sn = sa.map(s => s.showOgName || s.showEnglishName || 'Untitled').join(', ');
+        const ca = w.createdAt ? (w.createdAt.toDate ? w.createdAt.toDate().toLocaleDateString() : new Date(w.createdAt).toLocaleDateString()) : '-';
+        return `<tr><td><strong>${escapeHtml(w.name || '-')}</strong></td><td><span class="email-badge">${escapeHtml(w.email || '-')}</span></td><td>${escapeHtml(w.phone || '-')}</td><td>${escapeHtml(w.company || '-')}</td><td>${ca}</td><td>${sa.length > 0 ? `<span class="show-count">${sa.length}</span> ${escapeHtml(sn)}` : '<span style="color:#adb5bd">None</span>'}</td></tr>`;
+    }).join('');
+}
+document.getElementById('writersModal').addEventListener('click', function(e) { if (e.target === this) closeWritersModal(); });
+
+// ── Writer dropdown helpers ────────────────────────────────────────────────────
+function populateWriterDropdownList(listEl, searchTerm = '') {
+    const term = searchTerm.toLowerCase();
+    const filtered = term ? allRegisteredWriters.filter(w => (w.name || '').toLowerCase().includes(term) || (w.email || '').toLowerCase().includes(term)) : allRegisteredWriters;
+    if (!filtered.length) { listEl.innerHTML = '<div class="writer-dropdown-empty">No writers found</div>'; return; }
+    listEl.innerHTML = filtered.map(w => {
+        const initials = (w.name || 'W').split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const isSel = selectedModalWriter && selectedModalWriter.email === w.email;
+        return `<div class="writer-dropdown-item${isSel ? ' selected' : ''}" data-email="${escapeHtml(w.email || '')}"><div class="writer-dropdown-avatar">${initials}</div><div class="writer-dropdown-info"><div class="writer-dropdown-name">${escapeHtml(w.name || 'Unknown')}</div><div class="writer-dropdown-email">${escapeHtml(w.email || '-')}</div>${w.company ? `<div class="writer-dropdown-phone">${escapeHtml(w.company)}${w.phone ? ' • ' + escapeHtml(w.phone) : ''}</div>` : ''}</div></div>`;
+    }).join('');
+    listEl.onclick = e => {
+        const item = e.target.closest('.writer-dropdown-item');
+        if (!item) return;
+        const writer = allRegisteredWriters.find(w => w.email === item.dataset.email);
+        if (writer) selectModalWriter(writer);
+    };
+}
+
+function selectModalWriter(writer) {
+    selectedModalWriter = writer;
+    document.getElementById('modalWriterTrigger').innerHTML = `<div class="selected-writer"><span class="selected-writer-name">${escapeHtml(writer.name || 'Unknown')}</span><span class="selected-writer-email">${escapeHtml(writer.email || '-')}</span></div><span class="dropdown-arrow">▼</span>`;
+    document.getElementById('assignedTo').value = writer.name || '';
+    document.getElementById('writerEmail').value = writer.email || '';
+    if (!document.getElementById('writerId').value) {
+        const wi = allRegisteredWriters.indexOf(writer) + 1;
+        document.getElementById('writerId').value = `WR${String(wi).padStart(3, '0')}`;
+    }
+    const preview = document.getElementById('modalWriterPreview');
+    preview.classList.add('show');
+    document.getElementById('previewWriterName').textContent = writer.name || '-';
+    document.getElementById('previewWriterEmail').textContent = writer.email || '-';
+    document.getElementById('previewWriterPhone').textContent = writer.phone || '-';
+    document.getElementById('previewWriterCompany').textContent = writer.company || '-';
+    document.getElementById('modalWriterPanel').classList.remove('show');
+    document.getElementById('modalWriterTrigger').classList.remove('active');
+}
+
+window.clearModalWriterSelection = function() {
+    selectedModalWriter = null;
+    document.getElementById('modalWriterTrigger').innerHTML = '<span class="placeholder-text">Select a registered writer...</span><span class="dropdown-arrow">▼</span>';
+    document.getElementById('modalWriterTrigger').classList.remove('active');
+    document.getElementById('modalWriterPanel').classList.remove('show');
+    document.getElementById('modalWriterPreview').classList.remove('show');
+};
+
+window.toggleModalWriterDropdown = function() {
+    const p = document.getElementById('modalWriterPanel'), t = document.getElementById('modalWriterTrigger');
+    if (p.classList.contains('show')) { p.classList.remove('show'); t.classList.remove('active'); }
+    else { p.classList.add('show'); t.classList.add('active'); document.getElementById('modalWriterSearch').value = ''; populateWriterDropdownList(document.getElementById('modalWriterList')); setTimeout(() => document.getElementById('modalWriterSearch').focus(), 100); }
+};
+
+window.filterModalWriterList = function() { populateWriterDropdownList(document.getElementById('modalWriterList'), document.getElementById('modalWriterSearch').value); };
+
+function resolveWriterId(writer, existingWriterId) {
+    if (writer.writerId) return writer.writerId;
+    if (existingWriterId) return existingWriterId;
+    const idx = allRegisteredWriters.indexOf(writer);
+    return `WR${String(idx >= 0 ? idx + 1 : 1).padStart(3, '0')}`;
+}
+
+function populateQuickWriterList(searchTerm = '') {
+    const listEl = document.getElementById('quickWriterList'), term = searchTerm.toLowerCase();
+    const filtered = term ? allRegisteredWriters.filter(w => (w.name || '').toLowerCase().includes(term) || (w.email || '').toLowerCase().includes(term)) : allRegisteredWriters;
+    if (!filtered.length) { listEl.innerHTML = '<div class="writer-dropdown-empty">No writers found</div>'; return; }
+    listEl.innerHTML = filtered.map(w => {
+        const initials = (w.name || 'W').split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const isSel = selectedQuickWriter && selectedQuickWriter.email === w.email;
+        return `<div class="writer-dropdown-item${isSel ? ' selected' : ''}" data-email="${escapeHtml(w.email || '')}"><div class="writer-dropdown-avatar">${initials}</div><div class="writer-dropdown-info"><div class="writer-dropdown-name">${escapeHtml(w.name || 'Unknown')}</div><div class="writer-dropdown-email">${escapeHtml(w.email || '-')}</div></div></div>`;
+    }).join('');
+    listEl.onclick = e => {
+        const item = e.target.closest('.writer-dropdown-item');
+        if (!item) return;
+        const writer = allRegisteredWriters.find(w => w.email === item.dataset.email);
+        if (writer) selectQuickWriter(writer);
+    };
+}
+
+function selectQuickWriter(writer) {
+    selectedQuickWriter = writer;
+    document.getElementById('quickWriterTrigger').innerHTML = `<div class="selected-writer"><span class="selected-writer-name">${escapeHtml(writer.name || 'Unknown')}</span><span class="selected-writer-email">${escapeHtml(writer.email || '-')}</span></div><span class="dropdown-arrow">▼</span>`;
+    document.getElementById('quickWriterPanel').classList.remove('show');
+    document.getElementById('quickWriterTrigger').classList.remove('active');
+    const show = allShows.find(s => s.showCode === quickEditShowCode);
+    const resolvedId = resolveWriterId(writer, show?.writerId || '');
+    document.getElementById('autofillWriterId').textContent = resolvedId || '(auto-generated)';
+    document.getElementById('autofillWriterEmail').textContent = writer.email || '(none)';
+    document.getElementById('writerAutofillInfo').classList.add('show');
+    if (document.getElementById('quickEditInput').style.display !== 'none')
+        document.getElementById('quickEditInput').value = writer.name || '';
+}
+
+window.clearQuickWriterSelection = function() {
+    selectedQuickWriter = null;
+    document.getElementById('quickWriterTrigger').innerHTML = '<span class="placeholder-text">Select a writer...</span><span class="dropdown-arrow">▼</span>';
+    document.getElementById('quickWriterTrigger').classList.remove('active');
+    document.getElementById('quickWriterPanel').classList.remove('show');
+    document.getElementById('writerAutofillInfo').classList.remove('show');
+    if (document.getElementById('quickEditInput').style.display !== 'none')
+        document.getElementById('quickEditInput').value = '';
+};
+
+window.toggleQuickWriterDropdown = function() {
+    const p = document.getElementById('quickWriterPanel'), t = document.getElementById('quickWriterTrigger');
+    if (p.classList.contains('show')) { p.classList.remove('show'); t.classList.remove('active'); }
+    else { p.classList.add('show'); t.classList.add('active'); document.getElementById('quickWriterSearch').value = ''; populateQuickWriterList(); setTimeout(() => document.getElementById('quickWriterSearch').focus(), 100); }
+};
+
+window.filterQuickWriterList = function() { populateQuickWriterList(document.getElementById('quickWriterSearch').value); };
+
+// ── Chat ───────────────────────────────────────────────────────────────────────
+function formatChatTime(iso) {
+    const d = new Date(iso), now = new Date();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return time;
+    const y = new Date(now); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return `Yesterday ${time}`;
+    return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
+}
+function getChatDateLabel(iso) {
+    const d = new Date(iso), now = new Date();
+    if (d.toDateString() === now.toDateString()) return 'Today';
+    const y = new Date(now); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+}
+function renderChatMessages(remarks) {
+    const body = document.getElementById('chatBody');
+    if (!remarks || !remarks.length) {
+        body.innerHTML = '<div class="chat-empty"><div style="font-size:3rem;opacity:0.3;margin-bottom:0.75rem;">💬</div><p>No remarks yet.</p></div>';
+        return;
+    }
+    let html = '<div class="chat-messages">', lastDate = '';
+    remarks.forEach(msg => {
+        const dl = getChatDateLabel(msg.timestamp);
+        if (dl !== lastDate) { html += `<div class="chat-date-divider"><span>${dl}</span></div>`; lastDate = dl; }
+        const isAdmin = msg.role === 'admin', side = isAdmin ? 'sent' : 'received';
+        const rc = isAdmin ? 'chat-role-admin' : 'chat-role-writer';
+        const rl = isAdmin ? 'Admin' : 'Writer';
+        html += `<div class="chat-message ${side}"><div class="chat-bubble">${escapeHtml(truncate(msg.text || '', MAX_REMARK_LENGTH))}</div><div class="chat-meta"><span class="chat-role-badge ${rc}">${rl}</span><span class="chat-sender">${escapeHtml(truncate(msg.senderName || msg.senderEmail || 'Unknown', 50))}</span><span class="chat-time">${formatChatTime(msg.timestamp)}</span></div></div>`;
+    });
+    body.innerHTML = html + '</div>';
+    body.scrollTop = body.scrollHeight;
+}
+
+window.openChatModal = function(showCode) {
+    chatShowCode = showCode;
+    const show = allShows.find(s => s.showCode === showCode);
+    if (!show) return;
+    document.getElementById('chatTitle').textContent = '💬 Remarks';
+    document.getElementById('chatSubtitle').textContent = `${show.showOgName || show.showEnglishName || showCode} — ${showCode}`;
+    document.getElementById('chatInput').value = '';
+    renderChatMessages(getRemarks(show));
+    document.getElementById('chatModal').classList.add('show');
+    setTimeout(() => {
+        document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
+        document.getElementById('chatInput').focus();
+    }, 100);
+};
+
+window.closeChatModal = function() {
+    document.getElementById('chatModal').classList.remove('show');
+    chatShowCode = null;
+};
+
+window.sendChatMessage = async function() {
+    if (!chatShowCode || !chatLimiter.canProceed()) {
+        if (chatShowCode) showToast('Too fast.', 'warning');
+        return;
+    }
+
+    const input = document.getElementById('chatInput');
+    const text  = truncate(input.value.trim(), MAX_REMARK_LENGTH);
+    if (!text) return;
+
+    const sendBtn = document.getElementById('chatSendBtn');
+    sendBtn.disabled = true;
+
+    const show = allShows.find(s => s.showCode === chatShowCode);
+    if (!show) { sendBtn.disabled = false; return; }
+
+    const currentRemarks = getRemarks(show);
+    if (currentRemarks.length >= MAX_REMARKS) {
+        showToast('Max remarks reached.', 'warning');
+        sendBtn.disabled = false;
+        return;
+    }
+
+    const ud        = SecureSession.getUserData() || {};
+    const adminName = truncate(ud.name || currentUser.email.split('@')[0], 50);
+
+    const newMessage = {
+        text,
+        senderEmail: currentUser.email,
+        senderName:  adminName,
+        role:        'admin',
+        timestamp:   new Date().toISOString()
+    };
+
+    try {
+        await updateShowFieldInFirebase(chatShowCode, 'remarks', [...currentRemarks, newMessage]);
+        input.value = '';
+        showToast('Sent!');
+    } catch(e) {
+        showToast('Failed.', 'error');
+    }
+
+    sendBtn.disabled = false;
+    input.focus();
+};
+
+document.getElementById('chatInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+});
+document.getElementById('chatModal').addEventListener('click', function(e) { if (e.target === this) closeChatModal(); });
+
+// ── Confirm / Preview helpers ──────────────────────────────────────────────────
+const ADD_FIELD_LABELS = {
+    showOgName: 'Show Chinese Name', showEnglishName: 'Show Working Name',
+    language: 'Language', showType: 'Show Type', showCode: 'Show Code',
+    licenseStatus: 'License Status', licensingPartner: 'Licensing Partner'
+};
+const FIELD_LABELS = {
+    ...ADD_FIELD_LABELS,
+    writerType: 'Writer Type', status: 'Status', assignedTo: 'Assigned to',
+    writerId: 'Writer ID', writerEmail: 'Writer Email',
+    ogEpisodes: 'OG Episodes', finalEpisodes: 'Final Episodes', approvedEpisodes: 'Approved Episodes',
+    showAssetsLink: 'Show Assets', localizationNotesLink: 'Localization Notes',
+    screenplayDraft1: 'Draft 1', draft1Comments: 'Draft 1 Comments',
+    screenplayDraft2: 'Draft 2', draft2Comments: 'Draft 2 Comments',
+    finalScreenplayLink: 'Final Screenplay', advanceInvoiceLink: 'Advance Invoice',
+    advancePaymentStatus: 'Advance Payment', finalInvoiceLink: 'Final Invoice',
+    finalPaymentStatus: 'Final Payment'
+};
+const LINK_FIELDS = ['showAssetsLink','localizationNotesLink','screenplayDraft1','draft1Comments','screenplayDraft2','draft2Comments','finalScreenplayLink','advanceInvoiceLink','finalInvoiceLink'];
+const isLinkField = f => LINK_FIELDS.includes(f);
+
+function formatFieldValue(field, value) {
+    if (!value && value !== 0) return '<em style="color:#adb5bd">Empty</em>';
+    if (field === 'showType') return SHOW_TYPE_MAP[value] || escapeHtml(value);
+    return escapeHtml(String(value));
+}
+
+function buildNewShowPreview(data) {
+    const sc = escapeHtml(data.showCode || 'N/A'), sn = escapeHtml(data.showOgName || 'Untitled');
+    let html = `<div class="confirm-show-info"><span class="confirm-show-code">${sc}</span><span class="confirm-show-name">${sn}</span><span class="confirm-action-badge new">🆕 New</span></div><div class="confirm-warning-banner"><span class="warning-icon">⚠️</span><span>Creating a <strong>new show</strong> with code <strong>${sc}</strong>.</span></div><div class="confirm-section-title">Details</div><div class="confirm-changes-list">`;
+    Object.keys(ADD_FIELD_LABELS).forEach(field => {
+        const value = data[field];
+        if (value && value !== '') html += `<div class="confirm-change-row"><div class="confirm-change-field">${ADD_FIELD_LABELS[field]}</div><div class="confirm-change-value">${formatFieldValue(field, value)}</div></div>`;
+    });
+    return html + '</div>';
+}
+
+function buildEditShowPreview(data, existingShow) {
+    const sc = escapeHtml(data.showCode || editingShowCode), sn = escapeHtml(data.showOgName || 'Untitled');
+    const oldAssignedTo = (existingShow.assignedTo || '').trim(), newAssignedTo = (data.assignedTo || '').trim();
+    const isWriterBeingChanged = oldAssignedTo !== '' && newAssignedTo !== '' && oldAssignedTo !== newAssignedTo;
+    const isWriterBeingSet = oldAssignedTo !== '' && newAssignedTo === '';
+    let html = `<div class="confirm-show-info"><span class="confirm-show-code">${sc}</span><span class="confirm-show-name">${sn}</span><span class="confirm-action-badge update">✏️ Update</span></div>`;
+    html += (isWriterBeingChanged || isWriterBeingSet)
+        ? `<div class="writer-change-info-banner"><span class="info-icon">🔄</span><div><strong>Writer is changing.</strong> A mandatory reason is required.</div></div>`
+        : `<div class="confirm-warning-banner"><span class="warning-icon">⚠️</span><span>Updating this show.</span></div>`;
+    const changed = [];
+    Object.keys(FIELD_LABELS).forEach(field => {
+        const nv = data[field];
+        let ov = existingShow[field];
+        if (field === 'status') ov = getShowStatus(existingShow);
+        else if (field === 'draft1Comments') ov = getDraft1Comments(existingShow);
+        else if (field === 'draft2Comments') ov = getDraft2Comments(existingShow);
+        else if (field === 'ogEpisodes') ov = getOgEpisodes(existingShow);
+        else if (field === 'finalEpisodes') ov = getFinalEpisodes(existingShow);
+        else if (field === 'approvedEpisodes') ov = getApprovedEpisodes(existingShow);
+        if (String(nv || '').trim() !== String(ov || '').trim()) changed.push({ field, oldVal: String(ov || '').trim(), newVal: String(nv || '').trim() });
+    });
+    if (changed.length > 0) {
+        html += `<div class="confirm-section-title">🔄 Changed (${changed.length})</div><div class="confirm-changes-list">`;
+        changed.forEach(({ field, oldVal, newVal }) => {
+            const il = isLinkField(field);
+            const od = oldVal ? (field === 'showType' ? (SHOW_TYPE_MAP[oldVal] || escapeHtml(oldVal)) : escapeHtml(oldVal)) : '<em style="color:#adb5bd">Empty</em>';
+            const nd = newVal ? (field === 'showType' ? (SHOW_TYPE_MAP[newVal] || escapeHtml(newVal)) : escapeHtml(newVal)) : '<em style="color:#dc3545;">Will be removed</em>';
+            html += `<div class="confirm-change-row" style="background:rgba(255,193,7,0.06);border-left:3px solid #ffc107;"><div class="confirm-change-field">${FIELD_LABELS[field]}</div><div class="confirm-change-diff"><span class="confirm-old-value">${od}</span><span class="confirm-new-value${il ? ' is-link' : ''}">→ ${nd}</span></div></div>`;
+        });
+        html += '</div>';
+    } else {
+        html += `<div class="confirm-no-changes"><div class="confirm-no-changes-icon">✅</div><p>No changes.</p></div>`;
+    }
+    if (isWriterBeingChanged || isWriterBeingSet) html += buildReasonSection(oldAssignedTo, isWriterBeingChanged ? newAssignedTo : '(removed)');
+    return html;
+}
+
+function buildReasonSection(fromWriter, toWriter) {
+    return `<div class="writer-change-reason-section" id="writerChangeReasonSection"><div class="writer-change-reason-title">🔴 Reason for Writer Change <span style="color:#dc3545;">*</span></div><div class="writer-change-reason-subtitle">Changing from <strong>${escapeHtml(fromWriter)}</strong> → <strong>${escapeHtml(toWriter)}</strong></div><textarea class="writer-change-reason-input" id="writerChangeReasonInput" placeholder="e.g. Writer unavailable, scope changed..." maxlength="500" oninput="updateReasonCounter()"></textarea><div class="writer-change-reason-counter" id="writerChangeReasonCounter">0 / 500</div><div class="writer-change-reason-error" id="writerChangeReasonError">⚠️ Please provide a reason before saving.</div></div>`;
+}
+
+window.updateReasonCounter = function() {
+    const input = document.getElementById('writerChangeReasonInput');
+    const counter = document.getElementById('writerChangeReasonCounter');
+    const errorEl = document.getElementById('writerChangeReasonError');
+    if (!input || !counter) return;
+    counter.textContent = `${input.value.length} / 500`;
+    if (input.value.length > 0 && errorEl) { input.classList.remove('error'); errorEl.classList.remove('show'); }
+};
+
+function validateWriterChangeReason() {
+    const section = document.getElementById('writerChangeReasonSection');
+    if (!section) return true;
+    const input = document.getElementById('writerChangeReasonInput');
+    const errorEl = document.getElementById('writerChangeReasonError');
+    if (!input) return true;
+    if (!input.value.trim()) {
+        input.classList.add('error');
+        if (errorEl) errorEl.classList.add('show');
+        input.focus();
+        return false;
+    }
+    return true;
+}
+
+function getWriterChangeReason() {
+    const input = document.getElementById('writerChangeReasonInput');
+    return input ? truncate(input.value.trim(), 500) : '';
+}
+
+function buildQuickEditPreview(showCode, fieldName, fieldLabel, newValue, writerAutofill, isWriterChange) {
+    const show = allShows.find(s => s.showCode === showCode);
+    if (!show) return '';
+    let oldValue = show[fieldName] || '';
+    if (fieldName === 'draft1Comments') oldValue = getDraft1Comments(show);
+    else if (fieldName === 'draft2Comments') oldValue = getDraft2Comments(show);
+    else if (fieldName === 'status') oldValue = getShowStatus(show);
+    else if (fieldName === 'ogEpisodes') oldValue = getOgEpisodes(show);
+    else if (fieldName === 'finalEpisodes') oldValue = getFinalEpisodes(show);
+    else if (fieldName === 'approvedEpisodes') oldValue = getApprovedEpisodes(show);
+    const sn = escapeHtml(show.showOgName || show.showEnglishName || 'Untitled');
+    const il = isLinkField(fieldName);
+    let html = `<div class="confirm-show-info"><span class="confirm-show-code">${escapeHtml(showCode)}</span><span class="confirm-show-name">${sn}</span><span class="confirm-action-badge update">✏️ Quick Edit</span></div>`;
+    html += isWriterChange
+        ? `<div class="writer-change-info-banner"><span class="info-icon">🔄</span><div><strong>Writer is changing.</strong> A mandatory reason is required.</div></div>`
+        : writerAutofill && fieldName === 'assignedTo'
+            ? `<div class="confirm-warning-banner"><span class="warning-icon">🔄</span><span>Will also auto-update <strong>Writer ID</strong> and <strong>Email</strong>.</span></div>`
+            : `<div class="confirm-warning-banner"><span class="warning-icon">⚠️</span><span>Updating <strong>${escapeHtml(fieldLabel)}</strong>.</span></div>`;
+    html += `<div class="confirm-quick-edit-preview"><div class="confirm-quick-field">${escapeHtml(fieldLabel)}</div>`;
+    if (String(oldValue) !== String(newValue)) {
+        html += oldValue
+            ? `<div class="confirm-change-diff" style="padding:0.75rem 0;"><span class="confirm-old-value">${escapeHtml(String(oldValue))}</span><span class="confirm-new-value${il ? ' is-link' : ''}">→ ${newValue ? escapeHtml(newValue) : '<em style="color:#dc3545;">Will be removed</em>'}</span></div>`
+            : `<div class="confirm-quick-value${il ? ' is-link' : ''}" style="color:#28a745;font-weight:500;">${escapeHtml(newValue)}</div>`;
+    } else {
+        html += `<div class="confirm-no-changes" style="padding:1rem 0;"><div class="confirm-no-changes-icon">✅</div><p>No change.</p></div>`;
+    }
+    if (writerAutofill && fieldName === 'assignedTo') {
+        const oldId = show.writerId || '', oldEmail = show.writerEmail || '';
+        html += `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(102,126,234,0.1);"><div class="confirm-section-title" style="margin-bottom:0.5rem;">🔄 Auto-updated Fields</div><div class="confirm-change-row" style="background:rgba(40,167,69,0.04);border-left:3px solid #28a745;margin-bottom:0.375rem;"><div class="confirm-change-field">Writer ID</div><div class="confirm-change-diff">${oldId ? `<span class="confirm-old-value">${escapeHtml(oldId)}</span>` : '<span class="confirm-old-value"><em>Empty</em></span>'}<span class="confirm-new-value">→ ${escapeHtml(writerAutofill.writerId)}</span></div></div><div class="confirm-change-row" style="background:rgba(40,167,69,0.04);border-left:3px solid #28a745;"><div class="confirm-change-field">Email</div><div class="confirm-change-diff">${oldEmail ? `<span class="confirm-old-value">${escapeHtml(oldEmail)}</span>` : '<span class="confirm-old-value"><em>Empty</em></span>'}<span class="confirm-new-value">→ ${escapeHtml(writerAutofill.writerEmail)}</span></div></div></div>`;
+    }
+    html += '</div>';
+    if (isWriterChange) {
+        const oldAssignedTo = (show.assignedTo || '').trim();
+        html += buildReasonSection(oldAssignedTo, newValue || '(removed)');
+    }
+    return html;
+}
+
+window.openConfirmModal = function(bodyHtml, onConfirm, headerTitle, headerDesc, onSaveClick) {
+    document.getElementById('confirmHeaderTitle').textContent = headerTitle || 'Confirm';
+    document.getElementById('confirmHeaderDesc').textContent = headerDesc || 'Review before saving.';
+    document.getElementById('confirmBody').innerHTML = bodyHtml;
+    const saveBtn = document.getElementById('confirmSaveBtn');
+    const newBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+    newBtn.addEventListener('click', async function() {
+        if (onSaveClick) { const ok = onSaveClick(); if (!ok) return; }
+        newBtn.disabled = true; newBtn.innerHTML = '⏳ Saving...';
+        await onConfirm();
+        newBtn.disabled = false; newBtn.innerHTML = '✓ Save';
+        closeConfirmModal();
+    });
+    document.getElementById('confirmModal').classList.add('show');
+};
+
+window.closeConfirmModal = function() {
+    document.getElementById('confirmModal').classList.remove('show');
+    pendingShowData = null;
+    pendingQuickEditData = null;
+};
+
+// ── previewSaveShow ────────────────────────────────────────────────────────────
+window.previewSaveShow = function() {
+    if (!saveLimiter.canProceed()) { showToast('Too fast. Please wait.', 'warning'); return; }
+
+    const showOgName      = truncate(document.getElementById('showOgName')?.value || '', 200).trim();
+    const showEnglishName = truncate(document.getElementById('showEnglishName')?.value || '', 200).trim();
+    const language        = document.getElementById('language')?.value || '';
+    const showType        = document.getElementById('showType')?.value || '';
+    const licenseStatus   = document.getElementById('licenseStatus')?.value || '';
+    const gv = id => truncate(document.getElementById(id)?.value || '', 500);
+
+    if (!showOgName)      { showToast('Show Chinese Name is required', 'error'); document.getElementById('showOgName').focus(); return; }
+    if (!showEnglishName) { showToast('Show Working Name is required', 'error'); document.getElementById('showEnglishName').focus(); return; }
+    if (!language)        { showToast('Please select a Language', 'error'); document.getElementById('language').focus(); return; }
+    if (!showType)        { showToast('Please select a Show Type', 'error'); document.getElementById('showType').focus(); return; }
+    if (!licenseStatus)   { showToast('Please select License Status', 'error'); document.getElementById('licenseStatus').focus(); return; }
+
+    if (isAddMode) {
+        const previewCode = generateShowCode(language, showType);
+        document.getElementById('showCode').value = previewCode;
+        const hintEl = document.getElementById('showCodeHint');
+        if (hintEl) hintEl.textContent = `Will be saved as: ${previewCode} (or next available)`;
+
+        const d = {
+            showOgName, showEnglishName, language, showType,
+            showCode: previewCode, licenseStatus,
+            licensingPartner: gv('licensingPartner'),
+            runtime: { hours: 0, minutes: 0, seconds: 0 },
+            writerType: '', status: '', writerStatus: '',
+            assignedTo: '', writerId: '', writerEmail: '',
+            ogEpisodes: '', finalEpisodes: '', approvedEpisodes: '',
+            showAssetsLink: '', localizationNotesLink: '',
+            screenplayDraft1: '', draft1Comments: '',
+            screenplayDraft2: '', draft2Comments: '',
+            finalScreenplayLink: '', advanceInvoiceLink: '',
+            advancePaymentStatus: 'Pending', finalInvoiceLink: '',
+            finalPaymentStatus: 'Pending',
+            updatedAt: new Date().toISOString()
+        };
+
+        pendingShowData = d;
+        openConfirmModal(
+            buildNewShowPreview(d),
+            async () => { await executeSaveShow(); },
+            'Confirm New Show',
+            `Creating show: ${previewCode}`
+        );
+
+    } else {
+        const statusVal = gv('status');
+        const d = {
+            showOgName, showEnglishName, language, showType,
+            showCode: gv('showCode'), licenseStatus,
+            licensingPartner: gv('licensingPartner'),
+            writerType: gv('writerType'), status: statusVal, writerStatus: statusVal,
+            assignedTo: gv('assignedTo'), writerId: gv('writerId'),
+            writerEmail: gv('writerEmail').toLowerCase(),
+            ogEpisodes: gv('ogEpisodes'), finalEpisodes: gv('finalEpisodes'),
+            approvedEpisodes: gv('approvedEpisodes'),
+            showAssetsLink: gv('showAssetsLink'),
+            localizationNotesLink: gv('localizationNotesLink'),
+            screenplayDraft1: gv('screenplayDraft1'), draft1Comments: gv('draft1Comments'),
+            screenplayDraft2: gv('screenplayDraft2'), draft2Comments: gv('draft2Comments'),
+            finalScreenplayLink: gv('finalScreenplayLink'),
+            advanceInvoiceLink: gv('advanceInvoiceLink'),
+            advancePaymentStatus: gv('advancePaymentStatus'),
+            finalInvoiceLink: gv('finalInvoiceLink'),
+            finalPaymentStatus: gv('finalPaymentStatus'),
+            updatedAt: new Date().toISOString()
+        };
+
+        if (!d.showCode) { showToast('Show code is missing', 'error'); return; }
+
+        pendingShowData = d;
+        const ex = allShows.find(s => s.showCode === editingShowCode);
+        const writerIsChanging = ((ex || {}).assignedTo || '').trim() !== '' &&
+            ((ex || {}).assignedTo || '').trim() !== (d.assignedTo || '').trim();
+
+        openConfirmModal(
+            buildEditShowPreview(d, ex || {}),
+            async () => { await executeSaveShow(); },
+            'Confirm Update', 'Review changes.',
+            writerIsChanging ? () => validateWriterChangeReason() : null
+        );
+    }
+};
+
+// ── executeSaveShow ────────────────────────────────────────────────────────────
+async function executeSaveShow() {
+    const d = pendingShowData;
+    if (!d) return;
+    const reason = getWriterChangeReason();
+
+    if (editingShowCode) {
+        d.showCode = editingShowCode;
+        const ex = allShows.find(s => s.showCode === editingShowCode);
+        if (ex) {
+            d.createdAt = ex.createdAt;
+            ['screenplayDraft1Comments','screenplayDraft2Comments','ogNoOfEpisodes',
+             'finalNoOfEpisodes','totalApprovedEpisodes','lastUpdatedBy','remarks',
+             'runtime','writerChangeHistory'].forEach(f => { if (ex[f] !== undefined) d[f] = ex[f]; });
+            if (reason) {
+                const oldAssigned = (ex.assignedTo || '').trim();
+                const newAssigned = (d.assignedTo || '').trim();
+                const existingHistory = getWriterChangeHistory(ex);
+                d.writerChangeHistory = [...existingHistory, buildWriterChangeEntry(oldAssigned, newAssigned, reason, currentUser.email)];
+            }
+        }
+        if (!d.createdAt) d.createdAt = new Date().toISOString();
+
+        const ok = await saveShowToFirebase(d);
+        if (ok) {
+            backgroundSyncToSheets('updateShow', { showCode: d.showCode, show: cleanShowForSheets(d) });
+            showToast('✅ Show updated!');
+            closeModal();
+        }
+
+    } else {
+        // ── NEW SHOW ───────────────────────────────────────────────────────
+        const lang = d.language, type = d.showType;
+        if (!lang || !type) {
+            showToast('Missing language or show type', 'error');
+            pendingShowData = null;
+            return;
+        }
+
+        let finalCode = generateShowCode(lang, type);
+        if (allShows.some(s => s.showCode === finalCode)) {
+            const prefix = `DR-${lang}-${type}-`;
+            const existingNums = allShows
+                .filter(s => s.showCode && s.showCode.startsWith(prefix))
+                .map(s => { const m = s.showCode.match(/DR-[A-Z]{2}-[A-Z]{2}-(\d+)$/); return m ? parseInt(m[1]) : 0; })
+                .filter(n => n > 0 && !isNaN(n));
+            const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+            finalCode = `DR-${lang}-${type}-${String(maxNum + 1).padStart(2, '0')}`;
+        }
+
+        d.showCode    = finalCode;
+        d.createdAt   = new Date().toISOString();
+        d.remarks     = [];
+        d.writerChangeHistory = [];
+
+        const ok = await saveShowToFirebase(d);
+        if (ok) {
+            backgroundSyncToSheets('addShow', { show: cleanShowForSheets(d) });
+            showToast(`✅ Show ${d.showCode} created!`);
+            closeModal();
+        }
+    }
+
+    pendingShowData = null;
+}
+
+// ── Quick edit ─────────────────────────────────────────────────────────────────
+window.openQuickEdit = function(sc, f, n) {
+    quickEditShowCode = sc; quickEditField = f; selectedQuickWriter = null;
+    document.getElementById('writerAutofillInfo').classList.remove('show');
+    const s = allShows.find(x => x.showCode === sc);
+    if (!s) return;
+    let v = s[f] || '';
+    if (f === 'draft1Comments') v = getDraft1Comments(s);
+    else if (f === 'draft2Comments') v = getDraft2Comments(s);
+    else if (f === 'status') v = getShowStatus(s);
+    else if (f === 'ogEpisodes') v = getOgEpisodes(s);
+    else if (f === 'finalEpisodes') v = getFinalEpisodes(s);
+    else if (f === 'approvedEpisodes') v = getApprovedEpisodes(s);
+    const config = EDITABLE_FIELD_CONFIG[f];
+    const inputEl = document.getElementById('quickEditInput');
+    const selectEl = document.getElementById('quickEditSelect');
+    const writerDropdown = document.getElementById('quickEditWriterDropdown');
+    document.getElementById('quickEditTitle').textContent = `Edit ${n}`;
+    document.getElementById('quickEditLabel').textContent = n;
+    inputEl.style.display = 'none'; selectEl.style.display = 'none'; writerDropdown.classList.remove('show');
+    if (config && config.type === 'writer-dropdown') {
+        writerDropdown.classList.add('show');
+        if (v) {
+            const mw = allRegisteredWriters.find(w => w.name?.toLowerCase() === v.toLowerCase() || (s.writerEmail && w.email?.toLowerCase() === s.writerEmail.toLowerCase()));
+            if (mw) selectQuickWriter(mw);
+            else document.getElementById('quickWriterTrigger').innerHTML = `<div class="selected-writer"><span class="selected-writer-name">${escapeHtml(v)}</span><span class="selected-writer-email" style="color:#ffc107">Not in registered list</span></div><span class="dropdown-arrow">▼</span>`;
+        } else clearQuickWriterSelection();
+        inputEl.style.display = 'block'; inputEl.type = 'text'; inputEl.value = v;
+        inputEl.placeholder = 'Or type name manually...'; inputEl.maxLength = 100;
+    } else if (config && config.type === 'select') {
+        selectEl.style.display = 'block'; selectEl.innerHTML = '';
+        config.options.forEach(opt => { const o = document.createElement('option'); o.value = opt; o.textContent = opt || '— Select —'; if (opt === v) o.selected = true; selectEl.appendChild(o); });
+    } else {
+        inputEl.style.display = 'block';
+        inputEl.type = config?.type === 'number' ? 'number' : config?.type === 'url' || isLinkField(f) ? 'url' : 'text';
+        inputEl.value = v;
+        inputEl.placeholder = isLinkField(f) ? 'https://...' : `Enter ${n}`;
+        if (config?.type === 'number') { inputEl.min = config.min || 0; inputEl.max = config.max || 9999; }
+        inputEl.maxLength = isLinkField(f) ? 2000 : 500;
+    }
+    document.getElementById('quickEditModal').classList.add('show');
+    setTimeout(() => {
+        if (config?.type === 'select') selectEl.focus();
+        else if (config?.type !== 'writer-dropdown') inputEl.focus();
+    }, 100);
+};
+
+window.previewQuickEdit = async function() {
+    if (!quickEditShowCode || !quickEditField) return;
+    const config = EDITABLE_FIELD_CONFIG[quickEditField];
+    let newValue, writerAutofill = null;
+    if (config && config.type === 'writer-dropdown') {
+        if (selectedQuickWriter) {
+            newValue = selectedQuickWriter.name || '';
+            const show = allShows.find(s => s.showCode === quickEditShowCode);
+            const resolvedId = resolveWriterId(selectedQuickWriter, show?.writerId || '');
+            writerAutofill = { writerId: resolvedId, writerEmail: selectedQuickWriter.email || '' };
+        } else newValue = truncate(document.getElementById('quickEditInput').value.trim(), 100);
+    } else if (config && config.type === 'select') {
+        newValue = document.getElementById('quickEditSelect').value;
+    } else {
+        newValue = truncate(document.getElementById('quickEditInput').value.trim(), 2000);
+    }
+    if (isLinkField(quickEditField) && newValue && !isValidURL(newValue)) { showToast('Invalid URL.', 'error'); return; }
+    let isWriterChange = false;
+    if (quickEditField === 'assignedTo') {
+        const show = allShows.find(s => s.showCode === quickEditShowCode);
+        const oldAssigned = (show?.assignedTo || '').trim();
+        const newAssigned = (newValue || '').trim();
+        if (oldAssigned !== '' && oldAssigned !== newAssigned) isWriterChange = true;
+    }
+    const fieldLabel = document.getElementById('quickEditLabel').textContent;
+    pendingQuickEditData = { showCode: quickEditShowCode, field: quickEditField, value: newValue, writerAutofill, isWriterChange };
+    openConfirmModal(
+        buildQuickEditPreview(quickEditShowCode, quickEditField, fieldLabel, newValue, writerAutofill, isWriterChange),
+        async () => { await executeQuickEdit(); },
+        'Confirm Quick Edit', 'Review change.',
+        isWriterChange ? () => validateWriterChangeReason() : null
+    );
+};
+
+async function executeQuickEdit() {
+    const data = pendingQuickEditData;
+    if (!data) return;
+    let updateFields = {};
+    updateFields[data.field] = data.value;
+    if (data.field === 'assignedTo' && data.writerAutofill) {
+        updateFields.writerId = data.writerAutofill.writerId;
+        updateFields.writerEmail = data.writerAutofill.writerEmail;
+    }
+    if (data.isWriterChange) {
+        const reason = getWriterChangeReason();
+        if (reason) {
+            const show = allShows.find(s => s.showCode === data.showCode);
+            const oldAssigned = (show?.assignedTo || '').trim();
+            const existingHistory = getWriterChangeHistory(show || {});
+            updateFields.writerChangeHistory = [...existingHistory, buildWriterChangeEntry(oldAssigned, data.value || '', reason, currentUser.email)];
+        }
+    }
+    if (await updateShowFieldInFirebase(data.showCode, updateFields)) {
+        const s = allShows.find(x => x.showCode === data.showCode);
+        if (s) {
+            backgroundSyncToSheets('updateShow', { showCode: data.showCode, show: cleanShowForSheets({ ...s, ...updateFields }) });
+        }
+        showToast(data.writerAutofill ? '✅ Updated: Name, Writer ID & Email!' : data.value ? '✅ Updated!' : '✅ Cleared!');
+    }
+    closeQuickEditModal();
+    pendingQuickEditData = null;
+}
+
+window.closeQuickEditModal = function() {
+    document.getElementById('quickEditModal').classList.remove('show');
+    document.getElementById('quickEditInput').style.display = 'block';
+    document.getElementById('quickEditSelect').style.display = 'none';
+    document.getElementById('quickEditWriterDropdown').classList.remove('show');
+    document.getElementById('quickWriterPanel').classList.remove('show');
+    document.getElementById('writerAutofillInfo').classList.remove('show');
+    selectedQuickWriter = null; quickEditShowCode = null; quickEditField = null;
+};
+
+// ── Writer History Modal ───────────────────────────────────────────────────────
+window.openWriterHistoryModal = function(showCode) {
+    const show = allShows.find(s => s.showCode === showCode);
+    if (!show) return;
+    historyShowCode = showCode;
+    renderWriterHistoryModal(show);
+    document.getElementById('writerHistoryModal').classList.add('show');
+};
+
+function renderWriterHistoryModal(show) {
+    document.getElementById('writerHistoryModalTitle').textContent = 'Writer Change History';
+    document.getElementById('writerHistoryModalSubtitle').textContent = `${show.showOgName || show.showEnglishName || show.showCode} — ${show.showCode}`;
+    const history = getWriterChangeHistory(show);
+    const unseenCount = history.filter(e => !e.seenAt).length;
+    document.getElementById('writerHistoryModalBadge').textContent = `${history.length} change${history.length !== 1 ? 's' : ''}`;
+    const markBtn = document.getElementById('markAllSeenBtn');
+    markBtn.disabled = unseenCount === 0;
+    markBtn.textContent = unseenCount > 0 ? `✓ Mark all as seen (${unseenCount})` : '✓ All seen';
+    const body = document.getElementById('writerHistoryModalBody');
+    if (!history.length) {
+        body.innerHTML = `<div class="writer-history-empty"><div class="writer-history-empty-icon">🔄</div><p>No writer changes recorded.</p></div>`;
+        return;
+    }
+    const currentWriterHtml = show.assignedTo
+        ? `<div class="writer-history-current"><div class="writer-history-current-label">✅ Current Writer</div><div class="writer-history-current-name">${escapeHtml(show.assignedTo)}</div><div class="writer-history-current-meta">${show.writerId ? `ID: ${escapeHtml(show.writerId)}` : ''} ${show.writerEmail ? `• ${escapeHtml(show.writerEmail)}` : ''}</div></div>`
+        : '';
+    const sorted = [...history].reverse();
+    let timelineHtml = `<div class="writer-history-timeline">`;
+    sorted.forEach((entry, i) => {
+        const isSeen = !!entry.seenAt;
+        const date = entry.changedAt ? new Date(entry.changedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Unknown date';
+        const seenDate = entry.seenAt ? new Date(entry.seenAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+        const dotClass = isSeen ? 'seen-dot' : 'unseen-dot';
+        const cardClass = isSeen ? 'seen-card' : '';
+        const badge = isSeen
+            ? `<span class="writer-history-seen-badge">🕐 Seen ${escapeHtml(seenDate)}</span>`
+            : `<span class="writer-history-unseen-badge">🔴 Unseen</span>`;
+        timelineHtml += `<div class="writer-history-entry"><div class="writer-history-dot-wrap"><div class="writer-history-dot ${dotClass}">${sorted.length - i}</div></div><div class="writer-history-card ${cardClass}"><div class="writer-history-card-header">${badge}<span class="writer-history-date">📅 ${escapeHtml(date)}</span><span class="writer-history-by">by ${escapeHtml(entry.changedBy || 'Unknown')}</span></div>${(entry.fromWriter || entry.toWriter) ? `<div class="writer-history-change-row"><span class="writer-history-from">${escapeHtml(entry.fromWriter || '(none)')}</span><span class="writer-history-arrow">→</span><span class="writer-history-to">${escapeHtml(entry.toWriter || '(none)')}</span></div>` : ''}<div class="writer-history-reason-wrap"><div class="writer-history-reason-label">📝 Reason</div><div class="writer-history-reason-text">${escapeHtml(entry.reason || '(no reason provided)')}</div></div></div></div>`;
+    });
+    timelineHtml += '</div>';
+    body.innerHTML = currentWriterHtml + timelineHtml;
+}
+
+window.closeWriterHistoryModal = function() {
+    document.getElementById('writerHistoryModal').classList.remove('show');
+    historyShowCode = null;
+};
+
+window.markAllChangesSeen = async function() {
+    if (!historyShowCode) return;
+    const show = allShows.find(s => s.showCode === historyShowCode);
+    if (!show) return;
+    const markBtn = document.getElementById('markAllSeenBtn');
+    markBtn.disabled = true; markBtn.textContent = '⏳ Marking...';
+    const history = getWriterChangeHistory(show);
+    const updateObj = {};
+    if (history.length > 0) updateObj.writerChangeHistory = markHistoryAsSeen(history, currentUser.email);
+    if (show.writerChangeReason && !show.writerChangeSeenAt) updateObj.writerChangeSeenAt = new Date().toISOString();
+    if (Object.keys(updateObj).length > 0) {
+        const ok = await updateShowFieldInFirebase(historyShowCode, updateObj);
+        if (ok) {
+            const localShow = allShows.find(s => s.showCode === historyShowCode);
+            if (localShow) {
+                Object.assign(localShow, updateObj);
+                renderWriterHistoryModal(localShow);
+                const currentSearch = getCurrentSearchTerm();
+                renderTable(currentSearch ? filterShows(currentSearch) : allShows);
+            }
+            showToast('✅ Marked as seen');
+        }
+    } else { markBtn.textContent = '✓ All seen'; markBtn.disabled = false; }
+};
+document.getElementById('writerHistoryModal').addEventListener('click', function(e) { if (e.target === this) closeWriterHistoryModal(); });
+
+// ── openAddModal ───────────────────────────────────────────────────────────────
+window.openAddModal = function() {
+    editingShowCode = null;
+    selectedModalWriter = null;
+    document.getElementById('modalTitle').textContent = '➕ Add New Show';
+    document.getElementById('showForm').reset();
+    setModalMode('add');
+    clearModalWriterSelection();
+    document.getElementById('showCode').value = '';
+    const hintEl = document.getElementById('showCodeHint');
+    if (hintEl) hintEl.textContent = 'Select Language and Show Type above to generate code';
+    document.getElementById('showModal').classList.add('show');
+    setTimeout(() => document.getElementById('showOgName').focus(), 150);
+};
+
+window.editShow = function(sc) {
+    editingShowCode = sc; selectedModalWriter = null;
+    const s = allShows.find(x => x.showCode === sc);
+    if (!s) { showToast('Not found', 'error'); return; }
+    document.getElementById('modalTitle').textContent = '✏️ Edit Show';
+    setModalMode('edit');
+    ['showOgName','showEnglishName','language','showType','showCode','licenseStatus',
+     'licensingPartner','writerType','assignedTo','writerId','writerEmail',
+     'showAssetsLink','localizationNotesLink','screenplayDraft1','screenplayDraft2',
+     'finalScreenplayLink','advanceInvoiceLink','advancePaymentStatus',
+     'finalInvoiceLink','finalPaymentStatus'].forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.value = s[f] || '';
+    });
+    document.getElementById('status').value = getShowStatus(s);
+    document.getElementById('ogEpisodes').value = getOgEpisodes(s);
+    document.getElementById('finalEpisodes').value = getFinalEpisodes(s);
+    document.getElementById('approvedEpisodes').value = getApprovedEpisodes(s);
+    document.getElementById('draft1Comments').value = getDraft1Comments(s);
+    document.getElementById('draft2Comments').value = getDraft2Comments(s);
+    const hintEl = document.getElementById('showCodeHint');
+    if (hintEl) hintEl.textContent = '';
+    clearModalWriterSelection();
+    if (s.writerEmail) {
+        const mw = allRegisteredWriters.find(w => w.email?.toLowerCase() === s.writerEmail.toLowerCase());
+        if (mw) selectModalWriter(mw);
+    }
+    document.getElementById('showModal').classList.add('show');
+};
+
+window.closeModal = function() {
+    document.getElementById('showModal').classList.remove('show');
+    document.getElementById('showForm').reset();
+    clearModalWriterSelection();
+    document.getElementById('modalWriterPanel').classList.remove('show');
+    const hintEl = document.getElementById('showCodeHint');
+    if (hintEl) hintEl.textContent = '';
+    editingShowCode = null; isAddMode = false; selectedModalWriter = null;
+};
+
+window.deleteShow = async function(sc) {
+    if (!confirm(`Delete "${sc}"? This cannot be undone.`)) return;
+    if (await deleteShowFromFirebase(sc)) {
+        backgroundSyncToSheets('deleteShow', { showCode: sc });
+        showToast('✅ Deleted!');
+    }
+};
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('quickEditModal').classList.contains('show')) {
+        e.preventDefault(); previewQuickEdit(); return;
+    }
+    if (e.key === 'Escape') {
+        if (document.getElementById('totalShowsModal').classList.contains('show')) closeTotalShowsModal();
+        else if (document.getElementById('completedWritersModal').classList.contains('show')) closeCompletedWritersModal();
+        else if (document.getElementById('writerHistoryModal').classList.contains('show')) closeWriterHistoryModal();
+        else if (document.getElementById('confirmModal').classList.contains('show')) closeConfirmModal();
+        else if (document.getElementById('activeWritersModal').classList.contains('show')) closeActiveWritersModal();
+        else if (document.getElementById('writersModal').classList.contains('show')) closeWritersModal();
+        else if (document.getElementById('quickEditModal').classList.contains('show')) closeQuickEditModal();
+        else if (document.getElementById('showModal').classList.contains('show')) closeModal();
+        else if (document.getElementById('chatModal').classList.contains('show')) closeChatModal();
+    }
+});
+
+// ── Debounced search ───────────────────────────────────────────────────────────
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', e => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const term = e.target.value.trim();
+        renderTable(term ? filterShows(term) : allShows);
+    }, 250);
+});
+
+// ── Close dropdowns on outside click ──────────────────────────────────────────
+document.addEventListener('click', function(e) {
+    const mw = document.getElementById('modalWriterSelectorWrapper');
+    if (mw && !mw.contains(e.target)) {
+        document.getElementById('modalWriterPanel').classList.remove('show');
+        document.getElementById('modalWriterTrigger').classList.remove('active');
+    }
+    const qd = document.getElementById('quickEditWriterDropdown');
+    if (qd && qd.classList.contains('show')) {
+        const qw = qd.querySelector('.writer-selector-wrapper');
+        if (qw && !qw.contains(e.target)) {
+            document.getElementById('quickWriterPanel').classList.remove('show');
+            document.getElementById('quickWriterTrigger').classList.remove('active');
+        }
+    }
+});
+
+// ── Backdrop close ─────────────────────────────────────────────────────────────
+document.getElementById('quickEditModal').addEventListener('click', function(e) { if (e.target === this) closeQuickEditModal(); });
+document.getElementById('showModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target === this) closeConfirmModal(); });
+
+// ── Logout ─────────────────────────────────────────────────────────────────────
+window.logout = function() {
+    if (!confirm('Logout?')) return;
+    isLoggingOut = true;
+    if (unsubscribeSnapshot) try { unsubscribeSnapshot(); } catch(e) {}
+    if (unsubscribeWriters) try { unsubscribeWriters(); } catch(e) {}
+    SecureSession.clear();
+    sessionStorage.clear();
+    try {
+        const bc = new BroadcastChannel('dashverse_auth');
+        bc.postMessage({ type: 'logout' }); bc.close();
+    } catch(e) {}
+    auth.signOut()
+        .then(() => window.location.replace('login.html'))
+        .catch(() => { isLoggingOut = false; showToast('Failed', 'error'); });
+};
+
+try {
+    const bc = new BroadcastChannel('dashverse_auth');
+    bc.onmessage = e => {
+        if (e.data?.type === 'logout' && !isLoggingOut) {
+            isLoggingOut = true;
+            if (unsubscribeSnapshot) try { unsubscribeSnapshot(); } catch(e) {}
+            if (unsubscribeWriters) try { unsubscribeWriters(); } catch(e) {}
+            SecureSession.clear();
+            window.location.replace('login.html');
+        }
+    };
+} catch(e) {}
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentUser && !isLoggingOut) {
+        setSyncStatus('syncing', 'Reconnecting...');
+        setTimeout(() => setSyncStatus('connected', 'Live'), 1000);
+    }
+});
+
+console.log('🚀 Admin Dashboard v12 — notifications removed');
+</script>
+</body>
+</html>

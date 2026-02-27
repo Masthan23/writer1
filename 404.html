@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashverse</title>
+    <script>
+        // GitHub Pages SPA redirect trick
+        var path = window.location.pathname;
+        var validPages = [
+            '/login.html', '/signup.html', '/verify-email.html',
+            '/forgot-password.html', '/admin-dashboard.html', '/writer-dashboard.html'
+        ];
+        // Check if path matches a valid page (with or without repo prefix)
+        var found = validPages.some(function(p) { return path.endsWith(p); });
+        if (!found) {
+            window.location.replace('/login.html');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
